@@ -3,16 +3,14 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define GET_WIN_COORD(scr, win, bor) (scr) - (win) - 2 * (bor)
 
-Notification *OpenNotification(Display *dpy, Config *config,
-                                       XftFont *font, const char *message,
-                                       NotificationType type,
-                                       void *indicator, uint8_t timeout) {
+Notification *OpenNotification(Display *dpy, Config *config, XftFont *font,
+                               const char *message, NotificationType type,
+                               void *indicator, uint8_t timeout) {
 
   Notification *res = (Notification *)malloc(sizeof(Notification));
 
   res->messsage = message;
   res->font = font;
-  res->timeout = timeout;
   res->type = type;
 
   XGlyphInfo indicator_extents;
@@ -20,10 +18,12 @@ Notification *OpenNotification(Display *dpy, Config *config,
   case UNOT_MESSAGE:
     res->icon = (Icon *)indicator;
     indicator_extents = ((Icon *)indicator)->extents;
+    res->timeout = timeout;
     break;
   case UNOT_SPINNER:
     res->spinner = (Spinner *)indicator;
     indicator_extents = ((Spinner *)indicator)->extents;
+    res->current_frame = 0;
     break;
   }
 
@@ -100,7 +100,6 @@ Notification *OpenNotification(Display *dpy, Config *config,
   case UNOT_SPINNER:
     indicator_font = ((Spinner *)indicator)->font;
     indicator_str = ((Spinner *)indicator)->frames[0];
-    res->current_frame = 0;
     break;
   }
 

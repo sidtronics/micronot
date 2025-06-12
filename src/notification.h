@@ -28,7 +28,10 @@ typedef struct _Notification {
       uint8_t current_frame;
     };
 
-    Icon *icon;
+    struct {
+      Icon *icon;
+      uint8_t timeout;
+    };
   };
   uint8_t i_x, i_y;
 
@@ -37,15 +40,13 @@ typedef struct _Notification {
 
   XftFont *font;
   XftColor color;
-  uint8_t timeout;
   struct timespec last_updated;
 
 } Notification;
 
-Notification *OpenNotification(Display *dpy, Config *config,
-                                       XftFont *font, const char *message,
-                                       NotificationType type,
-                                       void *indicator, uint8_t timeout);
+Notification *OpenNotification(Display *dpy, Config *config, XftFont *font,
+                               const char *message, NotificationType type,
+                               void *indicator, uint8_t timeout);
 
 void UpdateNotification(Display *dpy, Notification *notification);
 
