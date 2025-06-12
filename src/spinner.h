@@ -1,21 +1,21 @@
-#ifndef SPINNER_H
-#define SPINNER_H
+#ifndef UNOT_SPINNER_H
+#define UNOT_SPINNER_H
 
 #include <X11/Xft/Xft.h>
 #include <X11/Xlib.h>
 #include <stdint.h>
 
-typedef struct _UnotSpinner {
+typedef struct _Spinner {
 
   const char **frames;
   uint8_t count;
   XftFont *font;
   XGlyphInfo extents;
-} UnotSpinner;
+} Spinner;
 
-UnotSpinner *UnotCreateSpinner(Display *dpy, XftFont *font, const char **frames,
+Spinner *CreateSpinner(Display *dpy, XftFont *font, const char **frames,
                                uint8_t count);
 
-void UnotDestroySpinner(UnotSpinner *spinner);
+void DestroySpinner(Spinner *spinner);
 
 #endif

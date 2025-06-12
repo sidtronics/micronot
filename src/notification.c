@@ -3,12 +3,12 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define GET_WIN_COORD(scr, win, bor) (scr) - (win) - 2 * (bor)
 
-UnotNotification *UnotOpenNotification(Display *dpy, UnotConfig *config,
+Notification *OpenNotification(Display *dpy, Config *config,
                                        XftFont *font, const char *message,
-                                       UnotNotificationType type,
+                                       NotificationType type,
                                        void *indicator, uint8_t timeout) {
 
-  UnotNotification *res = (UnotNotification *)malloc(sizeof(UnotNotification));
+  Notification *res = (Notification *)malloc(sizeof(Notification));
 
   res->messsage = message;
   res->font = font;
@@ -18,12 +18,12 @@ UnotNotification *UnotOpenNotification(Display *dpy, UnotConfig *config,
   XGlyphInfo indicator_extents;
   switch (type) {
   case UNOT_MESSAGE:
-    res->icon = (UnotIcon *)indicator;
-    indicator_extents = ((UnotIcon *)indicator)->extents;
+    res->icon = (Icon *)indicator;
+    indicator_extents = ((Icon *)indicator)->extents;
     break;
   case UNOT_SPINNER:
-    res->spinner = (UnotSpinner *)indicator;
-    indicator_extents = ((UnotSpinner *)indicator)->extents;
+    res->spinner = (Spinner *)indicator;
+    indicator_extents = ((Spinner *)indicator)->extents;
     break;
   }
 
@@ -93,13 +93,13 @@ UnotNotification *UnotOpenNotification(Display *dpy, UnotConfig *config,
   const char *indicator_str;
   switch (type) {
   case UNOT_MESSAGE:
-    indicator_font = ((UnotIcon *)indicator)->font;
-    indicator_str = ((UnotIcon *)indicator)->icon;
+    indicator_font = ((Icon *)indicator)->font;
+    indicator_str = ((Icon *)indicator)->icon;
     break;
 
   case UNOT_SPINNER:
-    indicator_font = ((UnotSpinner *)indicator)->font;
-    indicator_str = ((UnotSpinner *)indicator)->frames[0];
+    indicator_font = ((Spinner *)indicator)->font;
+    indicator_str = ((Spinner *)indicator)->frames[0];
     res->current_frame = 0;
     break;
   }
@@ -117,7 +117,7 @@ UnotNotification *UnotOpenNotification(Display *dpy, UnotConfig *config,
   return res;
 }
 
-void UnotUpdateNotification(Display *dpy, UnotNotification *notification) {
+void UpdateNotification(Display *dpy, Notification *notification) {
 
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);

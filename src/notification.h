@@ -1,5 +1,5 @@
-#ifndef NOTIFICATION_H
-#define NOTIFICATION_H
+#ifndef UNOT_NOTIFICATION_H
+#define UNOT_NOTIFICATION_H
 
 #include "config.h"
 #include "icon.h"
@@ -8,27 +8,27 @@
 #include <X11/Xlib.h>
 #include <time.h>
 
-typedef enum _UnotNotificationType {
+typedef enum _NotificationType {
 
   UNOT_MESSAGE,
   UNOT_SPINNER
 
-} UnotNotificationType;
+} NotificationType;
 
-typedef struct _UnotNotification {
+typedef struct _Notification {
 
   Window window;
   XftDraw *draw;
 
-  UnotNotificationType type;
+  NotificationType type;
   union {
 
     struct {
-      UnotSpinner *spinner;
+      Spinner *spinner;
       uint8_t current_frame;
     };
 
-    UnotIcon *icon;
+    Icon *icon;
   };
   uint8_t i_x, i_y;
 
@@ -40,15 +40,15 @@ typedef struct _UnotNotification {
   uint8_t timeout;
   struct timespec last_updated;
 
-} UnotNotification;
+} Notification;
 
-UnotNotification *UnotOpenNotification(Display *dpy, UnotConfig *config,
+Notification *OpenNotification(Display *dpy, Config *config,
                                        XftFont *font, const char *message,
-                                       UnotNotificationType type,
+                                       NotificationType type,
                                        void *indicator, uint8_t timeout);
 
-void UnotUpdateNotification(Display *dpy, UnotNotification *notification);
+void UpdateNotification(Display *dpy, Notification *notification);
 
-// void UnotCloseNotification(Display *dpy, UnotNotification *notification);
+// void CloseNotification(Display *dpy, Notification *notification);
 
 #endif

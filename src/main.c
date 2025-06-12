@@ -46,25 +46,25 @@ int main(int argc, char **argv) {
 
   assert(font && "font error");
 
-  UnotConfig config = (UnotConfig){5, 5, 5, 2, 0x000000, 0x00ff00, 0x00ff00};
+  Config config = (Config){5, 5, 5, 2, 0x000000, 0x00ff00, 0x00ff00};
 
-  UnotSpinner *spinner = UnotCreateSpinner(
+  Spinner *spinner = CreateSpinner(
       display, ifont,
       (const char *[]){"", "", "", "", "", "", "", ""},
       6);
 
   assert(spinner);
 
-  UnotIcon *icon = UnotCreateIcon(display, ifont, ico);
+  Icon *icon = CreateIcon(display, ifont, ico);
 
-  UnotNotification *not = UnotOpenNotification(display, &config, font, text,
+  Notification *not = OpenNotification(display, &config, font, text,
                                                UNOT_SPINNER, spinner, 5);
 
   while (1) {
     if (handle_events(display))
       break;
 
-    UnotUpdateNotification(display, not);
+    UpdateNotification(display, not);
 
     struct timespec ts = {0, 10 * 1000000}; // 10ms
     nanosleep(&ts, NULL);

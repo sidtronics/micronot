@@ -1,9 +1,9 @@
 #include "spinner.h"
 
-UnotSpinner *UnotCreateSpinner(Display *dpy, XftFont *font, const char **frames,
+Spinner *CreateSpinner(Display *dpy, XftFont *font, const char **frames,
                                uint8_t count) {
 
-  UnotSpinner *spinner = (UnotSpinner *)malloc(sizeof(UnotSpinner));
+  Spinner *spinner = (Spinner *)malloc(sizeof(Spinner));
   spinner->frames = frames;
   spinner->count = count;
   spinner->font = font;
@@ -24,4 +24,4 @@ UnotSpinner *UnotCreateSpinner(Display *dpy, XftFont *font, const char **frames,
   return spinner;
 }
 
-void UnotDestroySpinner(UnotSpinner *spinner) { free(spinner); }
+void DestroySpinner(Spinner *spinner) { free(spinner); }

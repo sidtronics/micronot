@@ -1,20 +1,20 @@
-#ifndef ICON_H
-#define ICON_H
+#ifndef UNOT_ICON_H
+#define UNOT_ICON_H
 
 #include <X11/Xft/Xft.h>
 #include <X11/Xlib.h>
 #include <stdint.h>
 
-typedef struct _UnotIcon {
+typedef struct _Icon {
 
   const char *icon;
   XftFont *font;
   XGlyphInfo extents;
 
-} UnotIcon;
+} Icon;
 
-UnotIcon *UnotCreateIcon(Display *dpy, XftFont *font, const char *icon);
+Icon *CreateIcon(Display *dpy, XftFont *font, const char *icon);
 
-void UnotDestroyIcon(UnotIcon *icon);
+void DestroyIcon(Icon *icon);
 
 #endif

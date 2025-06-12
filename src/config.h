@@ -1,9 +1,9 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef UNOT_CONFIG_H
+#define UNOT_CONFIG_H
 
 #include <stdint.h>
 
-typedef struct _UnotConfig {
+typedef struct _Config {
 
   uint8_t x_padding;
   uint8_t y_padding;
@@ -12,6 +12,6 @@ typedef struct _UnotConfig {
   unsigned long background_color;
   unsigned long foreground_color;
   unsigned long border_color;
-} UnotConfig;
+} Config;
 
 #endif
