@@ -45,16 +45,8 @@ Notification *OpenNotification(Display *dpy, Config *config, XftFont *font,
 
   res->i_x = x_padding;
   res->t_x = x_padding + i_w + spacing;
-
-  if (indicator_extents.height >= extents.height) {
-    res->i_y = y_padding + indicator_extents.y;
-    res->t_y =
-        y_padding + (indicator_extents.height - extents.height) / 2 + extents.y;
-  } else {
-    res->t_y = y_padding + extents.y;
-    res->i_y = y_padding + (extents.height - indicator_extents.height) / 2 +
-               indicator_extents.y;
-  }
+  res->i_y = indicator_extents.y + (win_h - indicator_extents.height) / 2;
+  res->t_y = extents.y + (win_h - extents.height) / 2;
 
   Screen *screen = XDefaultScreenOfDisplay(dpy);
   u_int32_t scr_nbr = XScreenNumberOfScreen(screen);
