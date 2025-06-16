@@ -11,7 +11,7 @@ struct _NotificationNode {
   NotificationNode *next;
 };
 
-Notification *notification_list_append(NotificationNode **head);
+Notification *notification_list_append(NotificationNode **head, NotificationNode *node);
 
 NotificationNode *notification_list_unlink_next(NotificationNode **head, NotificationNode *prev);
 

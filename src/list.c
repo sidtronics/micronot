@@ -1,23 +1,22 @@
 #include "list.h"
 
-Notification *notification_list_append(NotificationNode **head) {
+Notification *notification_list_append(NotificationNode **head,
+                                       NotificationNode *node) {
 
-  if (!head)
+  if (head == NULL)
     return NULL;
 
-  NotificationNode *newNode = malloc(sizeof(NotificationNode));
-  if (!newNode)
-    return NULL;
+  NotificationNode *new_node = (node ? node : malloc(sizeof(NotificationNode)));
 
-  newNode->next = NULL;
+  new_node->next = NULL;
 
   NotificationNode **indirect = head;
   while (*indirect) {
     indirect = &(*indirect)->next;
   }
 
-  *indirect = newNode;
-  return &newNode->notification;
+  *indirect = new_node;
+  return &new_node->notification;
 }
 
 NotificationNode *notification_list_unlink_next(NotificationNode **head,
