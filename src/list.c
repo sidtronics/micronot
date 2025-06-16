@@ -26,13 +26,22 @@ Notification *notification_list_append(NotificationNode **head) {
   return &newNode->notification;
 }
 
-void notification_list_remove_next(NotificationNode *current) {
+NotificationNode *notification_list_unlist_next(NotificationNode *current) {
 
   if (!current || current->next == NULL)
-    return;
+    return NULL;
 
   NotificationNode *temp = current->next;
   current->next = temp->next;
 
-  free(temp);
+  return temp;
+}
+
+void notification_list_remove_next(NotificationNode *current) {
+
+  NotificationNode *target = notification_list_unlist_next(current);
+  if (target == NULL)
+    return;
+
+  free(target);
 }
