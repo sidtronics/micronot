@@ -15,11 +15,21 @@ typedef enum _NotificationType {
 
 } NotificationType;
 
+typedef enum _NotificationStatus {
+
+  UNOT_OPEN,
+  UNOT_CLOSED,
+  UNOT_UNMAPPED,
+  UNOT_WAITING
+
+} NotificationStatus;
+
 typedef struct _Notification {
 
   Window window;
   XftDraw *draw;
 
+  NotificationStatus status;
   NotificationType type;
   union {
 
@@ -44,12 +54,13 @@ typedef struct _Notification {
 
 } Notification;
 
-Notification *OpenNotification(Display *dpy, Config *config, XftFont *font,
-                               const char *message, NotificationType type,
-                               void *indicator, uint8_t timeout);
+void *OpenNotification(Display *dpy, Config *config, XftFont *font,
+                       const char *message, NotificationType type,
+                       void *indicator, uint8_t timeout,
+                       Notification *notification);
 
 void UpdateNotification(Display *dpy, Notification *notification);
 
-// void CloseNotification(Display *dpy, Notification *notification);
+void CloseNotification(Display *dpy, Notification *notification);
 
 #endif
