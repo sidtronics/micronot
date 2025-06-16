@@ -2,46 +2,50 @@
 
 Notification *notification_list_append(NotificationNode **head) {
 
-  if (head == NULL)
+  if (!head)
     return NULL;
 
-  NotificationNode *newNode =
-      (NotificationNode *)malloc(sizeof(NotificationNode));
+  NotificationNode *newNode = malloc(sizeof(NotificationNode));
+  if (!newNode)
+    return NULL;
 
   newNode->next = NULL;
 
-  if (*head == NULL) {
-    *head = newNode;
+  NotificationNode **indirect = head;
+  while (*indirect) {
+    indirect = &(*indirect)->next;
   }
 
-  else {
-    NotificationNode *current = *head;
-
-    while (current->next)
-      current = current->next;
-
-    current->next = newNode;
-  }
-
+  *indirect = newNode;
   return &newNode->notification;
 }
 
-NotificationNode *notification_list_unlist_next(NotificationNode *current) {
+NotificationNode *notification_list_unlink_next(NotificationNode **head,
+                                                NotificationNode *prev) {
 
-  if (!current || current->next == NULL)
-    return NULL;
+  NotificationNode *target = NULL;
 
-  NotificationNode *temp = current->next;
-  current->next = temp->next;
+  if (prev == NULL) {
+    target = *head;
+    if (target) {
+      *head = target->next;
+    }
+  } else {
+    target = prev->next;
+    if (target) {
+      prev->next = target->next;
+    }
+  }
 
-  return temp;
+  return target;
 }
 
-void notification_list_remove_next(NotificationNode *current) {
+void notification_list_remove_next(NotificationNode **head,
+                                   NotificationNode *prev) {
 
-  NotificationNode *target = notification_list_unlist_next(current);
-  if (target == NULL)
-    return;
+  NotificationNode *target = notification_list_unlink_next(head, prev);
 
-  free(target);
+  if (target) {
+    free(target);
+  }
 }

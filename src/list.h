@@ -13,8 +13,8 @@ struct _NotificationNode {
 
 Notification *notification_list_append(NotificationNode **head);
 
-NotificationNode *notification_list_unlist_next(NotificationNode *current);
+NotificationNode *notification_list_unlink_next(NotificationNode **head, NotificationNode *prev);
 
-void notification_list_remove_next(NotificationNode *current);
+void notification_list_remove_next(NotificationNode **head, NotificationNode *prev);
 
 #endif
