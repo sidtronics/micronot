@@ -19,7 +19,6 @@ typedef enum _NotificationStatus {
 
   UNOT_OPEN,
   UNOT_CLOSED,
-  UNOT_UNMAPPED,
   UNOT_WAITING
 
 } NotificationStatus;
@@ -54,13 +53,13 @@ typedef struct _Notification {
 
 } Notification;
 
-void *OpenNotification(Display *dpy, Config *config, XftFont *font,
+void *notification_open(Display *dpy, Config *config, XftFont *font,
                        const char *message, NotificationType type,
                        void *indicator, uint8_t timeout,
                        Notification *notification);
 
-void UpdateNotification(Display *dpy, Notification *notification);
+void notification_update(Display *dpy, Notification *notification);
 
-void CloseNotification(Display *dpy, Notification *notification);
+void notification_close(Display *dpy, Notification *notification);
 
 #endif

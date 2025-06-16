@@ -1,9 +1,10 @@
+#include <stdbool.h>
 #include "notification.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define GET_WIN_COORD(scr, win, bor) (scr) - (win) - 2 * (bor)
 
-void *OpenNotification(Display *dpy, Config *config, XftFont *font,
+void *notification_open(Display *dpy, Config *config, XftFont *font,
                        const char *message, NotificationType type,
                        void *indicator, uint8_t timeout,
                        Notification *notification) {
@@ -114,7 +115,7 @@ void *OpenNotification(Display *dpy, Config *config, XftFont *font,
   return notification;
 }
 
-void CloseNotification(Display *dpy, Notification *notification) {
+void notification_close(Display *dpy, Notification *notification) {
 
   XftDrawDestroy(notification->draw);
   XUnmapWindow(dpy, notification->window);
@@ -124,22 +125,37 @@ void CloseNotification(Display *dpy, Notification *notification) {
   notification->status = UNOT_CLOSED;
 }
 
-void UpdateNotification(Display *dpy, Notification *notification) {
+bool _is_window_unmapped(Display *display, Window win) {
+    XWindowAttributes attr;
+    if (XGetWindowAttributes(display, win, &attr)) {
+        return attr.map_state != IsViewable;
+    }
+    return true;
+}
+
+void notification_update(Display *dpy, Notification *notification) {
 
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
   long elapsed = (now.tv_sec - notification->last_updated.tv_sec) * 1000 +
                  (now.tv_nsec - notification->last_updated.tv_nsec) / 1000000;
 
+  bool unmapped = _is_window_unmapped(dpy, notification->window);
+
   if (notification->type == UNOT_MESSAGE) {
 
-    if (elapsed >= notification->timeout * 1000) {
-      CloseNotification(dpy, notification);
+    if (unmapped || elapsed >= notification->timeout * 1000) {
+      notification_close(dpy, notification);
     }
 
   }
 
   else if (notification->type == UNOT_SPINNER) {
+
+    if(unmapped) {
+        notification->status = UNOT_WAITING;
+        return;
+    }
 
     if (elapsed >= 200) {
 

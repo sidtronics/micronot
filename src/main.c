@@ -57,14 +57,14 @@ int main(int argc, char **argv) {
 
   Icon *icon = CreateIcon(display, ifont, ico);
 
-  Notification *not = OpenNotification(display, &config, font, text,
+  Notification *not = notification_open(display, &config, font, text,
                                                UNOT_SPINNER, spinner, 5);
 
   while (1) {
     if (handle_events(display))
       break;
 
-    UpdateNotification(display, not);
+    notification_update(display, not);
 
     struct timespec ts = {0, 10 * 1000000}; // 10ms
     nanosleep(&ts, NULL);
