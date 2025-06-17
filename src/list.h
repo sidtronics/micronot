@@ -2,7 +2,6 @@
 #define UNOT_LIST_H
 
 #include "notification.h"
-#include <assert.h>
 #include <stdbool.h>
 
 typedef struct _NotificationNode NotificationNode;
@@ -22,7 +21,7 @@ NotificationNode *notification_list_unlink_next(NotificationNode **head,
 void notification_list_remove_next(NotificationNode **head,
                                    NotificationNode *prev);
 
-NotificationNode *
-notification_list_find_prev(NotificationNode *head,
-                            bool (*predicate)(Notification *));
+NotificationNode *notification_list_find_by_window(NotificationNode *head,
+                                                   NotificationNode **previous,
+                                                   Window window);
 #endif

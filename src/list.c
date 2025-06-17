@@ -1,5 +1,4 @@
 #include "list.h"
-#include <assert.h>
 
 Notification *notification_list_append(NotificationNode **head,
                                        NotificationNode *node) {
@@ -50,22 +49,22 @@ void notification_list_remove_next(NotificationNode **head,
   }
 }
 
-NotificationNode *
-notification_list_find_prev(NotificationNode *head,
-                            bool (*predicate)(Notification *)) {
-  if (!head)
-    return NULL;
+NotificationNode *notification_list_find_by_window(NotificationNode *head,
+                                                   NotificationNode **previous,
+                                                   Window window) {
 
-  NotificationNode *previous = NULL;
-  NotificationNode *current = head;
+  NotificationNode *prev, *curr;
 
-  while (current) {
-    if (predicate(&current->notification))
-      return previous;
-    previous = current;
-    current = current->next;
+  for (curr = head; curr; prev = curr, curr = curr->next) {
+    if (curr->notification.window == window) {
+      if (previous)
+        *previous = prev;
+      return curr;
+    }
   }
 
-  assert(0 && "notification_list_find_prev: No matching node found");
+  if (previous)
+    *previous = NULL;
+
   return NULL;
 }
