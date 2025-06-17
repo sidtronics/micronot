@@ -1,18 +1,17 @@
-#include <stdbool.h>
 #include "notification.h"
+#include <stdbool.h>
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define GET_WIN_COORD(scr, win, bor) (scr) - (win) - 2 * (bor)
 
 void *notification_open(Display *dpy, Config *config, XftFont *font,
-                       const char *message, NotificationType type,
-                       void *indicator, uint8_t timeout,
-                       Notification *notification) {
+                        const char *message, NotificationType type,
+                        void *indicator, uint8_t timeout,
+                        Notification *notification) {
 
   notification->messsage = message;
   notification->font = font;
   notification->type = type;
-  notification->status = UNOT_OPEN;
 
   XGlyphInfo indicator_extents;
   switch (type) {
@@ -58,7 +57,7 @@ void *notification_open(Display *dpy, Config *config, XftFont *font,
   XSetWindowAttributes attrs;
   attrs.background_pixel = config->background_color;
   attrs.border_pixel = config->border_color;
-  attrs.event_mask = ExposureMask | ButtonPressMask;
+  attrs.event_mask = ExposureMask | ButtonPressMask | StructureNotifyMask;
   attrs.override_redirect = 1;
 
   notification->window = XCreateWindow(
@@ -80,7 +79,8 @@ void *notification_open(Display *dpy, Config *config, XftFont *font,
                      DefaultColormap(dpy, scr_nbr), &xrcolor,
                      &notification->color);
 
-  XSelectInput(dpy, notification->window, ExposureMask | ButtonPressMask);
+  XSelectInput(dpy, notification->window,
+               ExposureMask | ButtonPressMask | StructureNotifyMask);
 
   XMapWindow(dpy, notification->window);
   XSync(dpy, False);
@@ -118,19 +118,8 @@ void *notification_open(Display *dpy, Config *config, XftFont *font,
 void notification_close(Display *dpy, Notification *notification) {
 
   XftDrawDestroy(notification->draw);
-  XUnmapWindow(dpy, notification->window);
   XDestroyWindow(dpy, notification->window);
-
   XftFontClose(dpy, notification->font);
-  notification->status = UNOT_CLOSED;
-}
-
-bool _is_window_unmapped(Display *display, Window win) {
-    XWindowAttributes attr;
-    if (XGetWindowAttributes(display, win, &attr)) {
-        return attr.map_state != IsViewable;
-    }
-    return true;
 }
 
 void notification_update(Display *dpy, Notification *notification) {
@@ -140,22 +129,15 @@ void notification_update(Display *dpy, Notification *notification) {
   long elapsed = (now.tv_sec - notification->last_updated.tv_sec) * 1000 +
                  (now.tv_nsec - notification->last_updated.tv_nsec) / 1000000;
 
-  bool unmapped = _is_window_unmapped(dpy, notification->window);
-
   if (notification->type == UNOT_MESSAGE) {
 
-    if (unmapped || elapsed >= notification->timeout * 1000) {
-      notification_close(dpy, notification);
+    if (elapsed >= notification->timeout * 1000) {
+      XUnmapWindow(dpy, notification->window);
     }
 
   }
 
   else if (notification->type == UNOT_SPINNER) {
-
-    if(unmapped) {
-        notification->status = UNOT_WAITING;
-        return;
-    }
 
     if (elapsed >= 200) {
 

@@ -15,20 +15,11 @@ typedef enum _NotificationType {
 
 } NotificationType;
 
-typedef enum _NotificationStatus {
-
-  UNOT_OPEN,
-  UNOT_CLOSED,
-  UNOT_WAITING
-
-} NotificationStatus;
-
 typedef struct _Notification {
 
   Window window;
   XftDraw *draw;
 
-  NotificationStatus status;
   NotificationType type;
   union {
 
