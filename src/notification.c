@@ -1,53 +1,73 @@
 #include "notification.h"
+#include <assert.h>
+#include <fontconfig/fontconfig.h>
 #include <stdbool.h>
+#include <wchar.h>
+
+#if 1
+#define ASSERT(x) assert((x))
+#else
+#define ASSERT(...) ((void)0)
+#endif
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define GET_WIN_COORD(scr, win, bor) (scr) - (win) - 2 * (bor)
 
-void *notification_open(Display *dpy, Config *config, XftFont *font,
-                        const char *message, NotificationType type,
-                        void *indicator, uint8_t timeout,
-                        Notification *notification) {
+static XftFont *_match_indicator_font(Display *dpy, Config *config,
+                                      const char *indicator) {
 
-  notification->messsage = message;
-  notification->font = font;
-  notification->type = type;
+  FcCharSet *charset = FcCharSetCreate();
+  FcPattern *pattern = FcPatternCreate();
+  FcPattern *matched_pattern;
 
-  XGlyphInfo indicator_extents;
-  switch (type) {
-  case UNOT_MESSAGE:
-    notification->icon = (Icon *)indicator;
-    indicator_extents = ((Icon *)indicator)->extents;
-    notification->timeout = timeout;
-    break;
-  case UNOT_SPINNER:
-    notification->spinner = (Spinner *)indicator;
-    indicator_extents = ((Spinner *)indicator)->extents;
-    notification->current_frame = 0;
-    break;
+  const char *p = indicator;
+
+  while (*p) {
+
+    wchar_t wc;
+    int n = mbtowc(&wc, p, MB_CUR_MAX);
+    ASSERT(n > 0 && "mbtowc failed");
+
+    FcCharSetAddChar(charset, (FcChar32)wc);
+    p += n;
+    if (*p == 0 || *p == 30)
+      p++;
   }
 
-  XGlyphInfo extents;
-  XftTextExtentsUtf8(dpy, font, (FcChar8 *)message, strlen(message), &extents);
+  FcConfigSubstitute(NULL, pattern, FcMatchPattern);
+  FcDefaultSubstitute(pattern);
 
-  uint8_t x_padding = config->x_padding;
-  uint8_t y_padding = config->y_padding;
-  uint8_t spacing = config->spacing;
-  uint8_t bor_w = config->border_thickness;
+  FcResult result;
+  matched_pattern = FcFontMatch(NULL, pattern, &result);
+  ASSERT(result == FcResultMatch);
 
-  uint8_t t_w = extents.width;
-  uint8_t i_w = indicator_extents.width;
+  XftFont *font = XftFontOpenPattern(dpy, matched_pattern);
+  ASSERT(font && "cant open Xftfont");
 
-  uint8_t h = MAX(extents.height, indicator_extents.height);
+  FcCharSetDestroy(charset);
+  FcPatternDestroy(pattern);
 
-  uint8_t win_w = i_w + spacing + t_w + x_padding * 2;
-  uint8_t win_h = h + y_padding * 2;
+  return font;
+}
 
-  notification->i_x = x_padding;
-  notification->t_x = x_padding + i_w + spacing;
-  notification->i_y =
-      indicator_extents.y + (win_h - indicator_extents.height) / 2;
-  notification->t_y = extents.y + (win_h - extents.height) / 2;
+static void _calculate_indicator_extents(Display *dpy, XftFont *font,
+                                         const char *indicator,
+                                         XGlyphInfo *ext) {
+
+  size_t ind_size;
+  const char *p = indicator;
+  for (size_t i = 0; i < 3; i++) {
+    ind_size += strlen(p);
+    p += (ind_size + 1);
+  }
+
+  XftTextExtentsUtf8(dpy, font, (FcChar8 *)indicator, ind_size, ext);
+}
+
+static Window _create_notification_window(Display *dpy, uint8_t win_h,
+                                          uint8_t win_w, uint8_t bor_w,
+                                          unsigned long bg_color,
+                                          unsigned long bor_color) {
 
   Screen *screen = XDefaultScreenOfDisplay(dpy);
   u_int32_t scr_nbr = XScreenNumberOfScreen(screen);
@@ -55,29 +75,109 @@ void *notification_open(Display *dpy, Config *config, XftFont *font,
   u_int32_t mask =
       CWBackPixel | CWBorderPixel | CWOverrideRedirect | CWEventMask;
   XSetWindowAttributes attrs;
-  attrs.background_pixel = config->background_color;
-  attrs.border_pixel = config->border_color;
+  attrs.background_pixel = bg_color;
+  attrs.border_pixel = bor_color;
   attrs.event_mask = ExposureMask | ButtonPressMask | StructureNotifyMask;
   attrs.override_redirect = 1;
 
-  notification->window = XCreateWindow(
-      dpy, XRootWindowOfScreen(screen),
-      GET_WIN_COORD(screen->width, win_w, bor_w),
-      GET_WIN_COORD(screen->height, win_h, bor_w), win_w, win_h, bor_w,
-      CopyFromParent, InputOutput, CopyFromParent, mask, &attrs);
+  Window window = XCreateWindow(dpy, XRootWindowOfScreen(screen),
+                                GET_WIN_COORD(screen->width, win_w, bor_w),
+                                GET_WIN_COORD(screen->height, win_h, bor_w),
+                                win_w, win_h, bor_w, CopyFromParent,
+                                InputOutput, CopyFromParent, mask, &attrs);
+
+  ASSERT(window && "_create_notification_window: failed to create window.");
+
+  XSelectInput(dpy, window,
+               ExposureMask | ButtonPressMask | StructureNotifyMask);
+  XMapWindow(dpy, window);
+  XSync(dpy, False);
+
+  return window;
+}
+
+static void _draw_notification(Display *dpy, Notification *notification) {
+
+  if (notification->type == UNOT_SPINNER) {
+
+    const char *end = strchr(notification->indicator, 30);
+    XftDrawStringUtf8(notification->draw, notification->ind_color,
+                      notification->ind_font, notification->ind_x,
+                      notification->ind_y, (FcChar8 *)notification->indicator,
+                      (size_t)(end - notification->indicator));
+    notification->frame = end + 1;
+  }
+
+  else if (notification->type == UNOT_MESSAGE) {
+
+    XftDrawStringUtf8(notification->draw, notification->ind_color,
+                      notification->ind_font, notification->ind_x,
+                      notification->ind_y, (FcChar8 *)notification->indicator,
+                      strlen(notification->indicator));
+  }
+
+  XftDrawStringUtf8(notification->draw, notification->msg_color,
+                    notification->msg_font, notification->msg_x,
+                    notification->msg_y, (FcChar8 *)notification->message,
+                    strlen(notification->message));
+
+  XFlush(dpy);
+}
+
+void notification_open(Display *dpy, Config *config,
+                       Notification *notification) {
+
+  ASSERT(notification->indicator &&
+         "notification_open: indicator string not set");
+  ASSERT(notification->ind_font &&
+         "notification_open: ind_font string not set");
+  ASSERT(notification->ind_color &&
+         "notification_open: ind_color string not set");
+  ASSERT(notification->message && "notification_open: message string not set");
+  ASSERT(notification->msg_font &&
+         "notification_open: msg_font string not set");
+  ASSERT(notification->msg_color &&
+         "notification_open: msg_color string not set");
+
+  //  notification->ind_font =
+  //      _match_indicator_font(dpy, config, notification->indicator);
+
+  XGlyphInfo ind_extents;
+  _calculate_indicator_extents(dpy, notification->ind_font,
+                               notification->indicator, &ind_extents);
+
+  XGlyphInfo extents;
+  XftTextExtentsUtf8(dpy, notification->msg_font,
+                     (FcChar8 *)notification->message,
+                     strlen(notification->message), &extents);
+
+  uint8_t x_padding = config->x_padding;
+  uint8_t y_padding = config->y_padding;
+  uint8_t spacing = config->spacing;
+  uint8_t bor_w = config->border_thickness;
+
+  uint8_t msg_w = extents.width;
+  uint8_t ind_w = ind_extents.width;
+
+  uint8_t max_h = MAX(extents.height, ind_extents.height);
+
+  uint8_t win_w = ind_w + spacing + msg_w + x_padding * 2;
+  uint8_t win_h = max_h + y_padding * 2;
+
+  notification->ind_x = x_padding;
+  notification->msg_x = x_padding + ind_w + spacing;
+  notification->ind_y = ind_extents.y + (win_h - ind_extents.height) / 2;
+  notification->msg_y = extents.y + (win_h - extents.height) / 2;
+
+  Screen *screen = XDefaultScreenOfDisplay(dpy);
+  u_int32_t scr_nbr = XScreenNumberOfScreen(screen);
+
+  notification->window = _create_notification_window(
+      dpy, win_h, win_w, bor_w, config->background_color, config->border_color);
 
   notification->draw =
       XftDrawCreate(dpy, notification->window, DefaultVisual(dpy, scr_nbr),
                     DefaultColormap(dpy, scr_nbr));
-
-  XRenderColor xrcolor = {
-      .red = ((config->foreground_color >> 16) & 0xff) * 257,
-      .green = ((config->foreground_color >> 8) & 0xff) * 257,
-      .blue = (config->foreground_color & 0xff) * 257,
-      .alpha = 0xffff};
-  XftColorAllocValue(dpy, DefaultVisual(dpy, scr_nbr),
-                     DefaultColormap(dpy, scr_nbr), &xrcolor,
-                     &notification->color);
 
   XSelectInput(dpy, notification->window,
                ExposureMask | ButtonPressMask | StructureNotifyMask);
@@ -85,41 +185,15 @@ void *notification_open(Display *dpy, Config *config, XftFont *font,
   XMapWindow(dpy, notification->window);
   XSync(dpy, False);
 
-  XftFont *indicator_font;
-  const char *indicator_str;
-  switch (type) {
-  case UNOT_MESSAGE:
-    indicator_font = ((Icon *)indicator)->font;
-    indicator_str = ((Icon *)indicator)->icon;
-    break;
-
-  case UNOT_SPINNER:
-    indicator_font = ((Spinner *)indicator)->font;
-    indicator_str = ((Spinner *)indicator)->frames[0];
-    break;
-  }
-
-  XftDrawStringUtf8(notification->draw, &notification->color, indicator_font,
-                    notification->i_x, notification->i_y,
-                    (FcChar8 *)indicator_str, strlen(indicator_str));
-
-  XftDrawStringUtf8(notification->draw, &notification->color,
-                    notification->font, notification->t_x, notification->t_y,
-                    (FcChar8 *)notification->messsage,
-                    strlen(notification->messsage));
+  _draw_notification(dpy, notification);
 
   clock_gettime(CLOCK_MONOTONIC, &notification->last_updated);
-
-  XFlush(dpy);
-
-  return notification;
 }
 
 void notification_close(Display *dpy, Notification *notification) {
 
   XftDrawDestroy(notification->draw);
   XDestroyWindow(dpy, notification->window);
-  XftFontClose(dpy, notification->font);
 }
 
 void notification_update(Display *dpy, Notification *notification) {

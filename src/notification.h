@@ -20,33 +20,25 @@ typedef struct _Notification {
   Window window;
   XftDraw *draw;
 
+  const char *indicator;
+  XftFont *ind_font;
+  XftColor *ind_color;
+  uint8_t ind_x, ind_y;
+
+  const char *message;
+  XftFont *msg_font;
+  XftColor *msg_color;
+  uint8_t msg_x, msg_y;
+
   NotificationType type;
-  union {
+  const char *frame;
+  int timeout;
 
-    struct {
-      Spinner *spinner;
-      uint8_t current_frame;
-    };
-
-    struct {
-      Icon *icon;
-      uint8_t timeout;
-    };
-  };
-  uint8_t i_x, i_y;
-
-  const char *messsage;
-  uint8_t t_x, t_y;
-
-  XftFont *font;
-  XftColor color;
   struct timespec last_updated;
 
 } Notification;
 
-void *notification_open(Display *dpy, Config *config, XftFont *font,
-                       const char *message, NotificationType type,
-                       void *indicator, uint8_t timeout,
+void notification_open(Display *dpy, Config *config,
                        Notification *notification);
 
 void notification_update(Display *dpy, Notification *notification);
