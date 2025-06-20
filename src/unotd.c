@@ -1,5 +1,42 @@
 #include "unotd.h"
 
+XftFont *unotd_resolve_indicator_font(Display *dpy, Config *config,
+                                      const char *indicator) {
+
+  FcCharSet *charset = FcCharSetCreate();
+  FcPattern *pattern = FcPatternCreate();
+  FcPattern *matched_pattern;
+
+  const char *p = indicator;
+
+  while (*p) {
+
+    wchar_t wc;
+    int n = mbtowc(&wc, p, MB_CUR_MAX);
+    assert(n > 0 && "mbtowc failed");
+
+    FcCharSetAddChar(charset, (FcChar32)wc);
+    p += n;
+    if (*p == 0 || *p == 30)
+      p++;
+  }
+
+  FcConfigSubstitute(NULL, pattern, FcMatchPattern);
+  FcDefaultSubstitute(pattern);
+
+  FcResult result;
+  matched_pattern = FcFontMatch(NULL, pattern, &result);
+  assert(result == FcResultMatch);
+
+  XftFont *font = XftFontOpenPattern(dpy, matched_pattern);
+  assert(font && "cant open Xftfont");
+
+  FcCharSetDestroy(charset);
+  FcPatternDestroy(pattern);
+
+  return font;
+}
+
 void unotd_handle_events(Unotd *unotd) {
 
   XEvent e;
@@ -58,10 +95,10 @@ void unotd_handle_unmapped_notification(Unotd *unotd, Window window) {
   }
 }
 
-static XftColor *_allocate_custom_color(Display *dpy, const char* color_str) {
+static XftColor *_allocate_custom_color(Display *dpy, const char *color_str) {
 
   unsigned long color = strtoul(color_str, NULL, 16);
-  //assert(color && "_allocate_custom_color: failed to parse color string");
+  // assert(color && "_allocate_custom_color: failed to parse color string");
 
   XRenderColor xrcolor = {.red = ((color >> 16) & 0xff) * 257,
                           .green = ((color >> 8) & 0xff) * 257,
@@ -95,7 +132,8 @@ void unotd_allocate_ext_resources(Unotd *unotd, Notification *notification) {
   if (notification->msg_color) {
 
     const char *msg_color_str = (const char *)notification->msg_color;
-    notification->msg_color = _allocate_custom_color(unotd->display, msg_color_str);
+    notification->msg_color =
+        _allocate_custom_color(unotd->display, msg_color_str);
 
   } else {
     notification->msg_color = &unotd->msg_color;
@@ -104,7 +142,8 @@ void unotd_allocate_ext_resources(Unotd *unotd, Notification *notification) {
   if (notification->ind_color) {
 
     const char *ind_color_str = (const char *)notification->ind_color;
-    notification->ind_color = _allocate_custom_color(unotd->display, ind_color_str);
+    notification->ind_color =
+        _allocate_custom_color(unotd->display, ind_color_str);
 
   } else {
     notification->ind_color = &unotd->ind_color;

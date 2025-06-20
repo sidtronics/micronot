@@ -13,43 +13,6 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define GET_WIN_COORD(scr, win, bor) (scr) - (win) - 2 * (bor)
 
-static XftFont *_match_indicator_font(Display *dpy, Config *config,
-                                      const char *indicator) {
-
-  FcCharSet *charset = FcCharSetCreate();
-  FcPattern *pattern = FcPatternCreate();
-  FcPattern *matched_pattern;
-
-  const char *p = indicator;
-
-  while (*p) {
-
-    wchar_t wc;
-    int n = mbtowc(&wc, p, MB_CUR_MAX);
-    ASSERT(n > 0 && "mbtowc failed");
-
-    FcCharSetAddChar(charset, (FcChar32)wc);
-    p += n;
-    if (*p == 0 || *p == 30)
-      p++;
-  }
-
-  FcConfigSubstitute(NULL, pattern, FcMatchPattern);
-  FcDefaultSubstitute(pattern);
-
-  FcResult result;
-  matched_pattern = FcFontMatch(NULL, pattern, &result);
-  ASSERT(result == FcResultMatch);
-
-  XftFont *font = XftFontOpenPattern(dpy, matched_pattern);
-  ASSERT(font && "cant open Xftfont");
-
-  FcCharSetDestroy(charset);
-  FcPatternDestroy(pattern);
-
-  return font;
-}
-
 static void _calculate_indicator_extents(Display *dpy, XftFont *font,
                                          const char *indicator,
                                          XGlyphInfo *ext) {
@@ -136,17 +99,12 @@ static void _draw_notification(Display *dpy, Notification *notification) {
 void notification_open(Display *dpy, Config *config,
                        Notification *notification) {
 
-  ASSERT(notification->indicator &&
-         "notification_open: indicator not set");
-  ASSERT(notification->ind_font &&
-         "notification_open: ind_font not set");
-  ASSERT(notification->ind_color &&
-         "notification_open: ind_color not set");
+  ASSERT(notification->indicator && "notification_open: indicator not set");
+  ASSERT(notification->ind_font && "notification_open: ind_font not set");
+  ASSERT(notification->ind_color && "notification_open: ind_color not set");
   ASSERT(notification->message && "notification_open: message not set");
-  ASSERT(notification->msg_font &&
-         "notification_open: msg_font not set");
-  ASSERT(notification->msg_color &&
-         "notification_open: msg_color not set");
+  ASSERT(notification->msg_font && "notification_open: msg_font not set");
+  ASSERT(notification->msg_color && "notification_open: msg_color not set");
 
   //  notification->ind_font =
   //      _match_indicator_font(dpy, config, notification->indicator);

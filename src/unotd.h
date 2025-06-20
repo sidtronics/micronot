@@ -20,6 +20,9 @@ typedef struct _Unotd {
   NotificationNode *head_waiting;
 } Unotd;
 
+XftFont *unotd_resolve_indicator_font(Display *dpy, Config *config,
+                                      const char *indicator);
+
 void unotd_handle_events(Unotd *unotd);
 void unotd_update_notifications(Unotd *unotd);
 void unotd_handle_unmapped_notification(Unotd *unotd, Window window);
