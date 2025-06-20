@@ -96,16 +96,25 @@ static Window _create_notification_window(Display *dpy, uint8_t win_h,
   return window;
 }
 
+static void _draw_and_update_spinner(Display *dpy, Notification *notification) {
+
+  const char *end = strchr(notification->frame, 30);
+
+  XftDrawStringUtf8(notification->draw, notification->ind_color,
+                    notification->ind_font, notification->ind_x,
+                    notification->ind_y, (FcChar8 *)notification->frame,
+                    (size_t)(end - notification->frame));
+
+  notification->frame = end + 1;
+
+  if (*notification->frame == '\0')
+    notification->frame = notification->indicator;
+}
+
 static void _draw_notification(Display *dpy, Notification *notification) {
 
   if (notification->type == UNOT_SPINNER) {
-
-    const char *end = strchr(notification->indicator, 30);
-    XftDrawStringUtf8(notification->draw, notification->ind_color,
-                      notification->ind_font, notification->ind_x,
-                      notification->ind_y, (FcChar8 *)notification->indicator,
-                      (size_t)(end - notification->indicator));
-    notification->frame = end + 1;
+    _draw_and_update_spinner(dpy, notification);
   }
 
   else if (notification->type == UNOT_MESSAGE) {
@@ -141,6 +150,8 @@ void notification_open(Display *dpy, Config *config,
 
   //  notification->ind_font =
   //      _match_indicator_font(dpy, config, notification->indicator);
+
+  notification->frame = notification->indicator;
 
   XGlyphInfo ind_extents;
   _calculate_indicator_extents(dpy, notification->ind_font,
@@ -179,15 +190,11 @@ void notification_open(Display *dpy, Config *config,
       XftDrawCreate(dpy, notification->window, DefaultVisual(dpy, scr_nbr),
                     DefaultColormap(dpy, scr_nbr));
 
-  XSelectInput(dpy, notification->window,
-               ExposureMask | ButtonPressMask | StructureNotifyMask);
-
-  XMapWindow(dpy, notification->window);
-  XSync(dpy, False);
-
+  notification->frame = notification->indicator;
   _draw_notification(dpy, notification);
 
-  clock_gettime(CLOCK_MONOTONIC, &notification->last_updated);
+  clock_gettime(CLOCK_MONOTONIC, &notification->start_time);
+  notification->last_time = notification->start_time;
 }
 
 void notification_close(Display *dpy, Notification *notification) {
@@ -200,34 +207,28 @@ void notification_update(Display *dpy, Notification *notification) {
 
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
-  long elapsed = (now.tv_sec - notification->last_updated.tv_sec) * 1000 +
-                 (now.tv_nsec - notification->last_updated.tv_nsec) / 1000000;
+  long elapsed = (now.tv_sec - notification->start_time.tv_sec) * 1000 +
+                 (now.tv_nsec - notification->start_time.tv_nsec) / 1000000;
 
-  if (notification->type == UNOT_MESSAGE) {
-
-    if (elapsed >= notification->timeout * 1000) {
-      XUnmapWindow(dpy, notification->window);
-    }
-
+  if (elapsed >= notification->timeout * 1000) {
+    XUnmapWindow(dpy, notification->window);
   }
 
   else if (notification->type == UNOT_SPINNER) {
 
+    elapsed = (now.tv_sec - notification->last_time.tv_sec) * 1000 +
+              (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;
+
     if (elapsed >= 200) {
 
-      notification->current_frame =
-          (notification->current_frame + 1) % notification->spinner->count;
+      XClearArea(dpy, notification->window, 0, 0, notification->msg_x, 0,
+                 False);
 
-      XClearArea(dpy, notification->window, 0, 0, notification->t_x, 0, False);
-
-      const char *frame =
-          notification->spinner->frames[notification->current_frame];
-      XftDrawStringUtf8(notification->draw, &notification->color,
-                        notification->spinner->font, notification->i_x,
-                        notification->i_y, (FcChar8 *)frame, strlen(frame));
+      _draw_and_update_spinner(dpy, notification);
 
       XFlush(dpy);
-      notification->last_updated = now;
+
+      notification->last_time = now;
     }
   }
 }

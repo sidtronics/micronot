@@ -34,7 +34,8 @@ typedef struct _Notification {
   const char *frame;
   int timeout;
 
-  struct timespec last_updated;
+  struct timespec start_time;
+  struct timespec last_time;
 
 } Notification;
 
