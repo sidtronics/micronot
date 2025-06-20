@@ -137,16 +137,16 @@ void notification_open(Display *dpy, Config *config,
                        Notification *notification) {
 
   ASSERT(notification->indicator &&
-         "notification_open: indicator string not set");
+         "notification_open: indicator not set");
   ASSERT(notification->ind_font &&
-         "notification_open: ind_font string not set");
+         "notification_open: ind_font not set");
   ASSERT(notification->ind_color &&
-         "notification_open: ind_color string not set");
-  ASSERT(notification->message && "notification_open: message string not set");
+         "notification_open: ind_color not set");
+  ASSERT(notification->message && "notification_open: message not set");
   ASSERT(notification->msg_font &&
-         "notification_open: msg_font string not set");
+         "notification_open: msg_font not set");
   ASSERT(notification->msg_color &&
-         "notification_open: msg_color string not set");
+         "notification_open: msg_color not set");
 
   //  notification->ind_font =
   //      _match_indicator_font(dpy, config, notification->indicator);
