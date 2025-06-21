@@ -8,11 +8,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 add_executable(unot
     src/main.c
     src/notification.c
-    src/spinner.c
-    src/icon.c)
+    src/list.c
+    src/unotd.c)
 
 include_directories (/usr/include/freetype2)
 
 target_link_libraries(unot
     X11
-    Xft)
+    Xft
+    fontconfig)

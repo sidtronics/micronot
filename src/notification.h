@@ -2,10 +2,9 @@
 #define UNOT_NOTIFICATION_H
 
 #include "config.h"
-#include "icon.h"
-#include "spinner.h"
 
 #include <X11/Xlib.h>
+#include <X11/Xft/Xft.h>
 #include <time.h>
 
 typedef enum _NotificationType {
@@ -18,6 +17,9 @@ typedef enum _NotificationType {
 typedef struct _Notification {
 
   Window window;
+  u_int16_t win_x, win_y;
+  u_int16_t win_w, win_h;
+
   XftDraw *draw;
 
   const char *indicator;

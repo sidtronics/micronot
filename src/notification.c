@@ -10,30 +10,13 @@
 #define ASSERT(...) ((void)0)
 #endif
 
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define GET_WIN_COORD(scr, win, bor) (scr) - (win) - 2 * (bor)
-
-static void _calculate_indicator_extents(Display *dpy, XftFont *font,
-                                         const char *indicator,
-                                         XGlyphInfo *ext) {
-
-  size_t ind_size;
-  const char *p = indicator;
-  for (size_t i = 0; i < 3; i++) {
-    ind_size += strlen(p);
-    p += (ind_size + 1);
-  }
-
-  XftTextExtentsUtf8(dpy, font, (FcChar8 *)indicator, ind_size, ext);
-}
-
-static Window _create_notification_window(Display *dpy, uint8_t win_h,
-                                          uint8_t win_w, uint8_t bor_w,
+static Window _create_notification_window(Display *dpy, u_int16_t win_x,
+                                          u_int16_t win_y, uint8_t win_w,
+                                          uint8_t win_h, uint8_t bor_w,
                                           unsigned long bg_color,
                                           unsigned long bor_color) {
 
-  Screen *screen = XDefaultScreenOfDisplay(dpy);
-  u_int32_t scr_nbr = XScreenNumberOfScreen(screen);
+  Screen *screen = DefaultScreenOfDisplay(dpy);
 
   u_int32_t mask =
       CWBackPixel | CWBorderPixel | CWOverrideRedirect | CWEventMask;
@@ -43,9 +26,7 @@ static Window _create_notification_window(Display *dpy, uint8_t win_h,
   attrs.event_mask = ExposureMask | ButtonPressMask | StructureNotifyMask;
   attrs.override_redirect = 1;
 
-  Window window = XCreateWindow(dpy, XRootWindowOfScreen(screen),
-                                GET_WIN_COORD(screen->width, win_w, bor_w),
-                                GET_WIN_COORD(screen->height, win_h, bor_w),
+  Window window = XCreateWindow(dpy, XRootWindowOfScreen(screen), win_x, win_y,
                                 win_w, win_h, bor_w, CopyFromParent,
                                 InputOutput, CopyFromParent, mask, &attrs);
 
@@ -54,24 +35,23 @@ static Window _create_notification_window(Display *dpy, uint8_t win_h,
   XSelectInput(dpy, window,
                ExposureMask | ButtonPressMask | StructureNotifyMask);
   XMapWindow(dpy, window);
-  XSync(dpy, False);
 
   return window;
 }
 
 static void _draw_and_update_spinner(Display *dpy, Notification *notification) {
 
-  const char *end = strchr(notification->frame, 30);
+  const char *end = strchrnul(notification->frame, 30);
 
   XftDrawStringUtf8(notification->draw, notification->ind_color,
                     notification->ind_font, notification->ind_x,
                     notification->ind_y, (FcChar8 *)notification->frame,
                     (size_t)(end - notification->frame));
 
-  notification->frame = end + 1;
-
-  if (*notification->frame == '\0')
+  if (*end == 0)
     notification->frame = notification->indicator;
+  else
+    notification->frame = end + 1;
 }
 
 static void _draw_notification(Display *dpy, Notification *notification) {
@@ -92,8 +72,6 @@ static void _draw_notification(Display *dpy, Notification *notification) {
                     notification->msg_font, notification->msg_x,
                     notification->msg_y, (FcChar8 *)notification->message,
                     strlen(notification->message));
-
-  XFlush(dpy);
 }
 
 void notification_open(Display *dpy, Config *config,
@@ -111,38 +89,12 @@ void notification_open(Display *dpy, Config *config,
 
   notification->frame = notification->indicator;
 
-  XGlyphInfo ind_extents;
-  _calculate_indicator_extents(dpy, notification->ind_font,
-                               notification->indicator, &ind_extents);
-
-  XGlyphInfo extents;
-  XftTextExtentsUtf8(dpy, notification->msg_font,
-                     (FcChar8 *)notification->message,
-                     strlen(notification->message), &extents);
-
-  uint8_t x_padding = config->x_padding;
-  uint8_t y_padding = config->y_padding;
-  uint8_t spacing = config->spacing;
-  uint8_t bor_w = config->border_thickness;
-
-  uint8_t msg_w = extents.width;
-  uint8_t ind_w = ind_extents.width;
-
-  uint8_t max_h = MAX(extents.height, ind_extents.height);
-
-  uint8_t win_w = ind_w + spacing + msg_w + x_padding * 2;
-  uint8_t win_h = max_h + y_padding * 2;
-
-  notification->ind_x = x_padding;
-  notification->msg_x = x_padding + ind_w + spacing;
-  notification->ind_y = ind_extents.y + (win_h - ind_extents.height) / 2;
-  notification->msg_y = extents.y + (win_h - extents.height) / 2;
-
-  Screen *screen = XDefaultScreenOfDisplay(dpy);
-  u_int32_t scr_nbr = XScreenNumberOfScreen(screen);
-
   notification->window = _create_notification_window(
-      dpy, win_h, win_w, bor_w, config->background_color, config->border_color);
+      dpy, notification->win_x, notification->win_y, notification->win_w,
+      notification->win_h, config->border_thickness, config->background_color,
+      config->border_color);
+
+  int scr_nbr = DefaultScreen(dpy);
 
   notification->draw =
       XftDrawCreate(dpy, notification->window, DefaultVisual(dpy, scr_nbr),
@@ -170,6 +122,7 @@ void notification_update(Display *dpy, Notification *notification) {
 
   if (elapsed >= notification->timeout * 1000) {
     XUnmapWindow(dpy, notification->window);
+    XSync(dpy, False);
   }
 
   else if (notification->type == UNOT_SPINNER) {
@@ -183,8 +136,6 @@ void notification_update(Display *dpy, Notification *notification) {
                  False);
 
       _draw_and_update_spinner(dpy, notification);
-
-      XFlush(dpy);
 
       notification->last_time = now;
     }
