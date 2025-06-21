@@ -1,4 +1,5 @@
 #include "list.h"
+#include <assert.h>
 
 Notification *notification_list_append(NotificationNode **head,
                                        NotificationNode *node) {
@@ -7,7 +8,6 @@ Notification *notification_list_append(NotificationNode **head,
     return NULL;
 
   NotificationNode *new_node = (node ? node : malloc(sizeof(NotificationNode)));
-
   new_node->next = NULL;
 
   NotificationNode **indirect = head;
@@ -16,23 +16,28 @@ Notification *notification_list_append(NotificationNode **head,
   }
 
   *indirect = new_node;
+
   return &new_node->notification;
 }
 
 NotificationNode *notification_list_unlink_next(NotificationNode **head,
                                                 NotificationNode *prev) {
 
+  assert(head && "notification_list_unlink_next: head is NULL");
+
   NotificationNode *target = NULL;
 
   if (prev == NULL) {
     target = *head;
-    if (target) {
-      *head = target->next;
-    }
-  } else {
+    *head = target->next;
+    target->next = NULL;
+  }
+
+  else {
     target = prev->next;
     if (target) {
       prev->next = target->next;
+      target->next = NULL;
     }
   }
 
@@ -53,18 +58,18 @@ NotificationNode *notification_list_find_by_window(NotificationNode *head,
                                                    NotificationNode **previous,
                                                    Window window) {
 
-  NotificationNode *prev, *curr;
+  NotificationNode *prev = NULL;
+  NotificationNode *curr = head;
 
-  for (curr = head; curr; prev = curr, curr = curr->next) {
+  while (curr) {
     if (curr->notification.window == window) {
-      if (previous)
-        *previous = prev;
+      *previous = prev;
       return curr;
     }
+    prev = curr;
+    curr = curr->next;
   }
 
-  if (previous)
-    *previous = NULL;
-
+  *previous = NULL;
   return NULL;
 }
