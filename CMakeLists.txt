@@ -5,7 +5,7 @@ project(micronot VERSION 0.1)
 # clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-add_executable(unot
+add_executable(unotd
     src/main.c
     src/notification.c
     src/list.c
@@ -13,7 +13,7 @@ add_executable(unot
 
 include_directories (/usr/include/freetype2)
 
-target_link_libraries(unot
+target_link_libraries(unotd
     X11
     Xft
     fontconfig)
