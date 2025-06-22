@@ -95,41 +95,43 @@ void unotd_reposition_notification(Unotd *unotd, NotificationNode *previous,
 
   uint8_t bor_w = unotd->config.border_thickness;
   uint8_t gap_size = unotd->config.gap_size;
+  uint8_t x_offset = unotd->config.x_offset;
+  uint8_t y_offset = unotd->config.y_offset;
 
   switch (unotd->origin) {
 
   case UNOT_ORIGIN_TOP_RIGHT:
-    target->win_x = screen->width - target->win_w - 2 * bor_w;
+    target->win_x = screen->width - target->win_w - 2 * bor_w - x_offset;
     target->win_y =
         previous
             ? (target->win_y = prev->win_y + prev->win_h + 2 * bor_w + gap_size)
-            : 0;
+            : y_offset;
 
     break;
 
   case UNOT_ORIGIN_TOP_LEFT:
-    target->win_x = 0;
+    target->win_x = x_offset;
     target->win_y =
         previous
             ? (target->win_y = prev->win_y + prev->win_h + 2 * bor_w + gap_size)
-            : 0;
+            : y_offset;
     break;
 
   case UNOT_ORIGIN_BOTTOM_RIGHT:
-    target->win_x = screen->width - target->win_w - 2 * bor_w;
-    target->win_y =
-        previous ? (target->win_y =
-                        prev->win_y - gap_size - target->win_h - 2 * bor_w)
-                 : (target->win_y = screen->height - target->win_h - 2 * bor_w);
+    target->win_x = screen->width - target->win_w - 2 * bor_w - x_offset;
+    target->win_y = previous ? (target->win_y = prev->win_y - gap_size -
+                                                target->win_h - 2 * bor_w)
+                             : (target->win_y = screen->height - target->win_h -
+                                                2 * bor_w - y_offset);
 
     break;
 
   case UNOT_ORIGIN_BOTTOM_LEFT:
-    target->win_x = 0;
-    target->win_y =
-        previous ? (target->win_y =
-                        prev->win_y - gap_size - target->win_h - 2 * bor_w)
-                 : (target->win_y = screen->height - target->win_h - 2 * bor_w);
+    target->win_x = x_offset;
+    target->win_y = previous ? (target->win_y = prev->win_y - gap_size -
+                                                target->win_h - 2 * bor_w)
+                             : (target->win_y = screen->height - target->win_h -
+                                                2 * bor_w - y_offset);
     break;
   }
 }

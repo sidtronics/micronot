@@ -3,7 +3,7 @@
 
 Unotd unotd = {
 
-    .origin = UNOT_ORIGIN_BOTTOM_LEFT,
+    .origin = UNOT_ORIGIN_TOP_RIGHT,
     .head_open = NULL,
     .head_waiting = NULL,
 
@@ -11,6 +11,8 @@ Unotd unotd = {
         {
             .x_padding = 2,
             .y_padding = 2,
+            .x_offset = 5,
+            .y_offset = 20,
             .spacing = 5,
             .border_thickness = 2,
             .gap_size = 7,
