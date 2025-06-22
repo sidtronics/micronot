@@ -120,7 +120,7 @@ void notification_update(Display *dpy, Notification *notification) {
   long elapsed = (now.tv_sec - notification->start_time.tv_sec) * 1000 +
                  (now.tv_nsec - notification->start_time.tv_nsec) / 1000000;
 
-  if (elapsed >= notification->timeout * 1000) {
+  if (notification->timeout > 0 && elapsed >= notification->timeout * 1000) {
     XUnmapWindow(dpy, notification->window);
     XSync(dpy, False);
   }

@@ -3,7 +3,7 @@
 
 Unotd unotd = {
 
-    .origin = UNOT_ORIGIN_TOP_RIGHT,
+    .origin = UNOT_ORIGIN_BOTTOM_RIGHT,
     .head_open = NULL,
     .head_waiting = NULL,
 
@@ -12,7 +12,7 @@ Unotd unotd = {
             .x_padding = 2,
             .y_padding = 2,
             .x_offset = 5,
-            .y_offset = 20,
+            .y_offset = 10,
             .spacing = 5,
             .border_thickness = 2,
             .gap_size = 7,
@@ -37,7 +37,7 @@ static void allocate_color(Display *dpy, unsigned long color, XftColor *res) {
                      DefaultColormap(dpy, scr_nbr), &xrcolor, res);
 }
 
-static void append_new_not(Unotd *unotd, NotificationType t, const char *m,
+static Notification* append_new_not(Unotd *unotd, NotificationType t, const char *m,
                            const char *i, int to) {
 
   Notification *new_not = notification_list_append(&unotd->head_open, NULL);
@@ -52,6 +52,8 @@ static void append_new_not(Unotd *unotd, NotificationType t, const char *m,
   new_not->indicator = i;
   new_not->ind_font = unotd_resolve_indicator_font(unotd, new_not->indicator);
   assert(new_not->ind_font && "font not resolved");
+
+  return new_not;
 }
 
 int main() {
@@ -75,6 +77,14 @@ int main() {
                  "🌍\x1E🌎\x1E🌏\0✔️\0✖️\0", 20);
 
   append_new_not(&unotd, UNOT_MESSAGE, "Now playing: FATRAT", "🎶\0", 30);
+
+  Notification *ker = append_new_not(&unotd, UNOT_SPINNER, "Compiling Kernel", "▱▱▱\x1e▰▱▱\x1e▰▰▱\x1e▰▰▰\x1e▰▰▱\x1e▰▱▱\x1e▱▱▱\0S\0F\0", -1);
+  ker->ind_color = (XftColor*)"0x235486";
+
+  Notification *not = append_new_not(&unotd, UNOT_MESSAGE, "WARN: Low Battery", "\0", -1);
+  not->ind_color = (XftColor*)"0xffa500";
+  not->msg_color = (XftColor*)"0xffa500";
+
 
   while (1) {
     unotd_handle_events(&unotd);
