@@ -3,8 +3,8 @@
 
 #include "config.h"
 
-#include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
+#include <X11/Xlib.h>
 #include <time.h>
 
 typedef enum _NotificationType {
