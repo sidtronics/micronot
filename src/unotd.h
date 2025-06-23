@@ -27,8 +27,8 @@ typedef struct _Unotd {
   XftColor msg_color;
   XftColor ind_color;
 
-  NotificationNode *head_open;
-  NotificationNode *head_waiting;
+  NotificationList open;
+  NotificationList wait;
 } Unotd;
 
 void unotd_handle_events(Unotd *unotd);

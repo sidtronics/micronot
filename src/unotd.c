@@ -161,11 +161,11 @@ void unotd_handle_events(Unotd *unotd) {
 
 void unotd_update_notifications(Unotd *unotd) {
 
-  if (unotd->head_open == NULL)
+  if (unotd->open.head == NULL)
     return;
 
   NotificationNode *previous = NULL;
-  NotificationNode *current = unotd->head_open;
+  NotificationNode *current = unotd->open.head;
   while (current) {
 
     if (current->notification.window == 0) {
@@ -186,7 +186,7 @@ void unotd_handle_unmapped_notification(Unotd *unotd, Window window) {
 
   NotificationNode *previous = NULL;
   NotificationNode *unmapped =
-      notification_list_find_by_window(unotd->head_open, &previous, window);
+      notification_list_find_by_window(&unotd->open, &previous, window);
 
   if (!unmapped)
     assert(0 && "unotd_handle_unmapped_notification: node not found");
@@ -196,18 +196,18 @@ void unotd_handle_unmapped_notification(Unotd *unotd, Window window) {
   case UNOT_MESSAGE:
     unotd_free_ext_resources(unotd, &unmapped->notification);
     notification_close(unotd->display, &unmapped->notification);
-    notification_list_remove_next(&unotd->head_open, previous);
+    notification_list_remove_next(&unotd->open, previous);
     break;
 
   case UNOT_SPINNER:
-    notification_list_unlink_next(&unotd->head_open, previous);
-    notification_list_append(&unotd->head_waiting, unmapped);
+    notification_list_unlink_next(&unotd->open, previous);
+    notification_list_append(&unotd->open, unmapped);
     break;
   }
 
-  if (unotd->head_open != NULL) {
+  if (unotd->open.head != NULL) {
 
-    NotificationNode *current = (previous ? previous->next : unotd->head_open);
+    NotificationNode *current = (previous ? previous->next : unotd->open.head);
 
     while (current) {
 

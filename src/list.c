@@ -1,36 +1,40 @@
 #include "list.h"
 #include <assert.h>
 
-Notification *notification_list_append(NotificationNode **head,
+Notification *notification_list_append(NotificationList *list,
                                        NotificationNode *node) {
 
-  if (head == NULL)
-    return NULL;
+  assert(list && "notification_list_append: list is NULL");
 
   NotificationNode *new_node = (node ? node : malloc(sizeof(NotificationNode)));
   new_node->next = NULL;
 
-  NotificationNode **indirect = head;
-  while (*indirect) {
-    indirect = &(*indirect)->next;
+  if (list->tail) {
+    list->tail->next = new_node;
   }
 
-  *indirect = new_node;
+  else {
+    list->head = new_node;
+  }
+
+  list->tail = new_node;
 
   return &new_node->notification;
 }
 
-NotificationNode *notification_list_unlink_next(NotificationNode **head,
+NotificationNode *notification_list_unlink_next(NotificationList *list,
                                                 NotificationNode *prev) {
 
-  assert(head && "notification_list_unlink_next: head is NULL");
+  assert(list && "notification_list_unlink_next: list is NULL");
 
   NotificationNode *target = NULL;
 
   if (prev == NULL) {
-    target = *head;
-    *head = target->next;
-    target->next = NULL;
+    target = list->head;
+    if (target) {
+      list->head = target->next;
+      target->next = NULL;
+    }
   }
 
   else {
@@ -41,35 +45,39 @@ NotificationNode *notification_list_unlink_next(NotificationNode **head,
     }
   }
 
+  if (target == list->tail) {
+    list->tail = prev;
+  }
+
   return target;
 }
 
-void notification_list_remove_next(NotificationNode **head,
+void notification_list_remove_next(NotificationList *list,
                                    NotificationNode *prev) {
 
-  NotificationNode *target = notification_list_unlink_next(head, prev);
+  NotificationNode *target = notification_list_unlink_next(list, prev);
 
   if (target) {
     free(target);
   }
 }
 
-NotificationNode *notification_list_find_by_window(NotificationNode *head,
-                                                   NotificationNode **previous,
+NotificationNode *notification_list_find_by_window(NotificationList *list,
+                                                   NotificationNode **prev,
                                                    Window window) {
 
-  NotificationNode *prev = NULL;
-  NotificationNode *curr = head;
+  NotificationNode *previous = NULL;
+  NotificationNode *current = list->head;
 
-  while (curr) {
-    if (curr->notification.window == window) {
-      *previous = prev;
-      return curr;
+  while (current) {
+    if (current->notification.window == window) {
+      *prev = previous;
+      return current;
     }
-    prev = curr;
-    curr = curr->next;
+    previous = current;
+    current = current->next;
   }
 
-  *previous = NULL;
+  *prev = NULL;
   return NULL;
 }

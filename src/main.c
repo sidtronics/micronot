@@ -1,11 +1,13 @@
-#include <locale.h>
 #include "unotd.h"
+#include <locale.h>
 
 Unotd unotd = {
 
     .origin = UNOT_ORIGIN_BOTTOM_RIGHT,
-    .head_open = NULL,
-    .head_waiting = NULL,
+
+    .open = {.head = NULL, .tail = NULL},
+
+    .wait = {.head = NULL, .tail = NULL},
 
     .config =
         {
@@ -16,7 +18,7 @@ Unotd unotd = {
             .spacing = 5,
             .border_thickness = 2,
             .gap_size = 7,
-            .indicator_size = 12.0,
+            .indicator_size = 10.0,
             .background_color = 0x000000,
             .foreground_color = 0x00FF00,
             .border_color = 0x00FF00,
@@ -37,10 +39,10 @@ static void allocate_color(Display *dpy, unsigned long color, XftColor *res) {
                      DefaultColormap(dpy, scr_nbr), &xrcolor, res);
 }
 
-static Notification* append_new_not(Unotd *unotd, NotificationType t, const char *m,
-                           const char *i, int to) {
+static Notification *append_new_not(Unotd *unotd, NotificationType t,
+                                    const char *m, const char *i, int to) {
 
-  Notification *new_not = notification_list_append(&unotd->head_open, NULL);
+  Notification *new_not = notification_list_append(&unotd->open, NULL);
   new_not->window = 0;
   new_not->frame = NULL;
   new_not->msg_font = NULL;
@@ -61,7 +63,7 @@ int main() {
   setlocale(LC_ALL, "en_US.utf8");
   unotd.display = XOpenDisplay(NULL);
   unotd.msg_font = XftFontOpenName(unotd.display, DefaultScreen(unotd.display),
-                                   "FiraCodeNerdFontPropo:style=Bold:size=8");
+                                   "FiraCodeNerdFontPropo:style=Bold:size=7");
 
   allocate_color(unotd.display, unotd.config.foreground_color,
                  &unotd.ind_color);
@@ -78,13 +80,15 @@ int main() {
 
   append_new_not(&unotd, UNOT_MESSAGE, "Now playing: FATRAT", "🎶\0", 30);
 
-  Notification *ker = append_new_not(&unotd, UNOT_SPINNER, "Compiling Kernel", "▱▱▱\x1e▰▱▱\x1e▰▰▱\x1e▰▰▰\x1e▰▰▱\x1e▰▱▱\x1e▱▱▱\0S\0F\0", -1);
-  ker->ind_color = (XftColor*)"0x235486";
+  Notification *ker = append_new_not(
+      &unotd, UNOT_SPINNER, "Compiling Kernel",
+      "▱▱▱\x1e▰▱▱\x1e▰▰▱\x1e▰▰▰\x1e▰▰▱\x1e▰▱▱\x1e▱▱▱\0S\0F\0", -1);
+  ker->ind_color = (XftColor *)"0x235486";
 
-  Notification *not = append_new_not(&unotd, UNOT_MESSAGE, "WARN: Low Battery", "\0", -1);
-  not->ind_color = (XftColor*)"0xffa500";
-  not->msg_color = (XftColor*)"0xffa500";
-
+  Notification *not =
+      append_new_not(&unotd, UNOT_MESSAGE, "WARN: Low Battery", "\0", -1);
+  not->ind_color = (XftColor *)"0xffa500";
+  not->msg_color = (XftColor *)"0xffa500";
 
   while (1) {
     unotd_handle_events(&unotd);
