@@ -39,11 +39,11 @@ void unotd_handle_unmap(Unotd *unotd, Window window) {
   case UNOT_MESSAGE:
     unotd_free_notification_resources(unotd, &unmapped->notification);
     notification_close(unotd->display, &unmapped->notification);
-    notification_list_remove_next(&unotd->open, previous);
+    notification_list_remove(&unotd->open, previous);
     break;
 
   case UNOT_SPINNER:
-    notification_list_unlink_next(&unotd->open, previous);
+    notification_list_unlink(&unotd->open, previous);
     notification_list_append(&unotd->open, unmapped);
     break;
   }

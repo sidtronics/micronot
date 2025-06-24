@@ -27,11 +27,10 @@ typedef bool (*NotificationPredicate)(Notification *node, void *data);
 Notification *notification_list_append(NotificationList *list,
                                        NotificationNode *node);
 
-NotificationNode *notification_list_unlink_next(NotificationList *list,
-                                                NotificationNode *prev);
+NotificationNode *notification_list_unlink(NotificationList *list,
+                                           NotificationNode *prev);
 
-void notification_list_remove_next(NotificationList *list,
-                                   NotificationNode *prev);
+void notification_list_remove(NotificationList *list, NotificationNode *prev);
 
 void notification_list_foreach(NotificationList *list, NotificationNode *prev,
                                NotificationVisitor visit, void *data);

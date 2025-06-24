@@ -22,8 +22,8 @@ Notification *notification_list_append(NotificationList *list,
   return &new_node->notification;
 }
 
-NotificationNode *notification_list_unlink_next(NotificationList *list,
-                                                NotificationNode *prev) {
+NotificationNode *notification_list_unlink(NotificationList *list,
+                                           NotificationNode *prev) {
 
   assert(list && "notification_list_unlink_next: list is NULL");
 
@@ -52,10 +52,9 @@ NotificationNode *notification_list_unlink_next(NotificationList *list,
   return target;
 }
 
-void notification_list_remove_next(NotificationList *list,
-                                   NotificationNode *prev) {
+void notification_list_remove(NotificationList *list, NotificationNode *prev) {
 
-  NotificationNode *target = notification_list_unlink_next(list, prev);
+  NotificationNode *target = notification_list_unlink(list, prev);
 
   if (target) {
     free(target);
