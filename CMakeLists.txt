@@ -5,11 +5,14 @@ project(micronot VERSION 0.1)
 # clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-add_executable(unotd
+add_executable(
+    unotd
     src/main.c
-    src/notification.c
+    src/unotd.c
+    src/utils.c
     src/list.c
-    src/unotd.c)
+    src/notification.c
+)
 
 include_directories (/usr/include/freetype2)
 

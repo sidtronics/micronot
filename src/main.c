@@ -1,9 +1,8 @@
 #include "unotd.h"
+#include "utils.h"
 #include <locale.h>
 
 Unotd unotd = {
-
-    .origin = UNOT_ORIGIN_BOTTOM_RIGHT,
 
     .open = {.head = NULL, .tail = NULL},
 
@@ -22,6 +21,7 @@ Unotd unotd = {
             .background_color = 0x000000,
             .foreground_color = 0x00FF00,
             .border_color = 0x00FF00,
+            .origin = UNOT_ORIGIN_BOTTOM_RIGHT,
         },
 
 };
@@ -52,7 +52,8 @@ static Notification *append_new_not(Unotd *unotd, NotificationType t,
   new_not->type = t;
   new_not->message = strdup(m);
   new_not->indicator = i;
-  new_not->ind_font = unotd_resolve_indicator_font(unotd, new_not->indicator);
+  new_not->ind_font = utils_match_indicator_font(
+      unotd->display, new_not->indicator, ":size=14.0:style=bold");
   assert(new_not->ind_font && "font not resolved");
 
   return new_not;
@@ -63,7 +64,7 @@ int main() {
   setlocale(LC_ALL, "en_US.utf8");
   unotd.display = XOpenDisplay(NULL);
   unotd.msg_font = XftFontOpenName(unotd.display, DefaultScreen(unotd.display),
-                                   "FiraCodeNerdFontPropo:style=Bold:size=7");
+                                   "FiraCodeNerdFontPropo:style=Bold:size=10");
 
   allocate_color(unotd.display, unotd.config.foreground_color,
                  &unotd.ind_color);
@@ -92,7 +93,8 @@ int main() {
 
   while (1) {
     unotd_handle_events(&unotd);
-    unotd_update_notifications(&unotd);
+    // unotd_update_notifications(&unotd);
+    notification_list_foreach(&unotd.open, NULL, unotd_update_visitor, &unotd);
 
     struct timespec ts = {0, 10 * 1000 * 1000};
     nanosleep(&ts, NULL);

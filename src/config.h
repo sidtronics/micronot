@@ -3,7 +3,18 @@
 
 #include <stdint.h>
 
+typedef enum _Origin {
+
+  UNOT_ORIGIN_TOP_RIGHT,
+  UNOT_ORIGIN_TOP_LEFT,
+  UNOT_ORIGIN_BOTTOM_RIGHT,
+  UNOT_ORIGIN_BOTTOM_LEFT
+
+} Origin;
+
 typedef struct _Config {
+
+  Origin origin;
 
   uint8_t x_padding;
   uint8_t y_padding;

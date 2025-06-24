@@ -62,6 +62,45 @@ void notification_list_remove_next(NotificationList *list,
   }
 }
 
+void notification_list_foreach(NotificationList *list, NotificationNode *prev,
+                               NotificationVisitor visit, void *data) {
+
+  assert(list && "notification_list_foreach: list is NULL");
+  assert(visit && "notification_list_foreach: callback is NULL");
+
+  NotificationNode *previous = prev;
+  NotificationNode *current = (prev ? prev->next : list->head);
+  while (current) {
+
+    previous ? visit(&previous->notification, &current->notification, data)
+             : visit(NULL, &current->notification, data);
+
+    previous = current;
+    current = current->next;
+  }
+}
+
+NotificationNode *notification_list_find(NotificationList *list,
+                                         NotificationNode **prev,
+                                         NotificationPredicate match,
+                                         void *data) {
+
+  NotificationNode *previous = NULL;
+  NotificationNode *current = list->head;
+
+  while (current) {
+    if (match(&current->notification, data)) {
+      *prev = previous;
+      return current;
+    }
+    previous = current;
+    current = current->next;
+  }
+
+  *prev = NULL;
+  return NULL;
+}
+
 NotificationNode *notification_list_find_by_window(NotificationList *list,
                                                    NotificationNode **prev,
                                                    Window window) {
