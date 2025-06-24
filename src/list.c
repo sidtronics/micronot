@@ -100,23 +100,3 @@ NotificationNode *notification_list_find(NotificationList *list,
   *prev = NULL;
   return NULL;
 }
-
-NotificationNode *notification_list_find_by_window(NotificationList *list,
-                                                   NotificationNode **prev,
-                                                   Window window) {
-
-  NotificationNode *previous = NULL;
-  NotificationNode *current = list->head;
-
-  while (current) {
-    if (current->notification.window == window) {
-      *prev = previous;
-      return current;
-    }
-    previous = current;
-    current = current->next;
-  }
-
-  *prev = NULL;
-  return NULL;
-}

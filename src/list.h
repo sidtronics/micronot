@@ -41,7 +41,4 @@ NotificationNode *notification_list_find(NotificationList *list,
                                          NotificationPredicate match,
                                          void *data);
 
-NotificationNode *notification_list_find_by_window(NotificationList *list,
-                                                   NotificationNode **prev,
-                                                   Window window);
 #endif
