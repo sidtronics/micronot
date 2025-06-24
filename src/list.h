@@ -24,6 +24,8 @@ typedef void (*NotificationVisitor)(Notification *prev, Notification *curr,
 
 typedef bool (*NotificationPredicate)(Notification *node, void *data);
 
+bool notification_list_is_empty(NotificationList *list);
+
 Notification *notification_list_append(NotificationList *list,
                                        NotificationNode *node);
 

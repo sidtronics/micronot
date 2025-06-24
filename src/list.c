@@ -1,6 +1,13 @@
 #include "list.h"
 #include <assert.h>
 
+bool notification_list_is_empty(NotificationList *list) {
+
+  bool res = (list->head == NULL);
+
+  return res;
+}
+
 Notification *notification_list_append(NotificationList *list,
                                        NotificationNode *node) {
 

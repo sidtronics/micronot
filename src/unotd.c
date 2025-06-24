@@ -31,8 +31,7 @@ void unotd_handle_unmap(Unotd *unotd, Window window) {
   NotificationNode *unmapped = notification_list_find(
       &unotd->open, &previous, unotd_match_window, (void *)(uintptr_t)window);
 
-  if (!unmapped)
-    assert(0 && "unotd_handle_unmapped_notification: node not found");
+  assert(unmapped && "unotd_handle_unmapped_notification: node not found");
 
   switch (unmapped->notification.type) {
 
@@ -48,7 +47,7 @@ void unotd_handle_unmap(Unotd *unotd, Window window) {
     break;
   }
 
-  if (unotd->open.head != NULL) {
+  if (!notification_list_is_empty(&unotd->open)) {
 
     notification_list_foreach(&unotd->open, previous, unotd_reposition_visitor,
                               unotd);
