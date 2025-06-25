@@ -1,5 +1,5 @@
 #include "unotd.h"
-#include "utils.h"
+#include <assert.h>
 #include <locale.h>
 
 Unotd unotd = {
@@ -15,15 +15,14 @@ Unotd unotd = {
             .x_offset = 5,
             .y_offset = 10,
             .spacing = 5,
-            .border_thickness = 2,
+            .border_size = 2,
             .gap_size = 7,
-            .indicator_size = 10.0,
+            .indicator_size = 14.0,
             .background_color = 0x000000,
             .foreground_color = 0x00FF00,
             .border_color = 0x00FF00,
             .origin = UNOT_ORIGIN_BOTTOM_RIGHT,
         },
-
 };
 
 static void allocate_color(Display *dpy, unsigned long color, XftColor *res) {
@@ -52,9 +51,6 @@ static Notification *append_new_not(Unotd *unotd, NotificationType t,
   new_not->type = t;
   new_not->message = strdup(m);
   new_not->indicator = i;
-  new_not->ind_font = utils_match_indicator_font(
-      unotd->display, new_not->indicator, ":size=14.0:style=bold");
-  assert(new_not->ind_font && "font not resolved");
 
   return new_not;
 }
@@ -71,29 +67,31 @@ int main() {
   allocate_color(unotd.display, unotd.config.foreground_color,
                  &unotd.msg_color);
 
-  append_new_not(&unotd, UNOT_SPINNER, "Updating system",
-                 "\x1E\x1E\x1E\x1E\x1E\0\0\0", 20);
+  append_new_not(&unotd, UNOT_SPINNER, "Ascii Spinner",
+                 "$[-]$[\\]$[|]$[/]$$[O]$[X]$$", 20);
 
-  append_new_not(&unotd, UNOT_MESSAGE, "Reminder Drink Water!", "💧\0", 10);
+  append_new_not(&unotd, UNOT_SPINNER, "Updating system",
+                 "|||||||||||:style=Bold", 20);
+
+  append_new_not(&unotd, UNOT_MESSAGE, "Stay Hydrated!", "|💧||:size=12", 10);
 
   append_new_not(&unotd, UNOT_SPINNER, "Syncing mirrors",
-                 "🌍\x1E🌎\x1E🌏\0✔️\0✖️\0", 20);
+                 "|🌍|🌎|🌏||✔️|✖️||", 20);
 
-  append_new_not(&unotd, UNOT_MESSAGE, "Now playing: FATRAT", "🎶\0", 30);
+  append_new_not(&unotd, UNOT_MESSAGE, "Now playing: FATRAT", "|🎶||", 30);
 
   Notification *ker = append_new_not(
       &unotd, UNOT_SPINNER, "Compiling Kernel",
-      "▱▱▱\x1e▰▱▱\x1e▰▰▱\x1e▰▰▰\x1e▰▰▱\x1e▰▱▱\x1e▱▱▱\0S\0F\0", -1);
+      "|▱▱▱|▰▱▱|▰▰▱|▰▰▰|▰▰▱|▰▱▱|▱▱▱||S|F||", -1);
   ker->ind_color = (XftColor *)"0x235486";
 
   Notification *not =
-      append_new_not(&unotd, UNOT_MESSAGE, "WARN: Low Battery", "\0", -1);
+      append_new_not(&unotd, UNOT_MESSAGE, "WARN: Low Battery", "|||", -1);
   not->ind_color = (XftColor *)"0xffa500";
   not->msg_color = (XftColor *)"0xffa500";
 
   while (1) {
     unotd_handle_events(&unotd);
-    // unotd_update_notifications(&unotd);
     notification_list_foreach(&unotd.open, NULL, unotd_update_visitor, &unotd);
 
     struct timespec ts = {0, 10 * 1000 * 1000};
