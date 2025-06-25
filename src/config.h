@@ -1,7 +1,7 @@
 #ifndef UNOT_CONFIG_H
 #define UNOT_CONFIG_H
 
-#include <stdint.h>
+#include <sys/types.h>
 
 typedef enum _Origin {
 
@@ -16,13 +16,13 @@ typedef struct _Config {
 
   Origin origin;
 
-  uint8_t x_padding;
-  uint8_t y_padding;
-  uint8_t x_offset;
-  uint8_t y_offset;
-  uint8_t spacing;
-  uint8_t border_thickness;
-  uint8_t gap_size;
+  u_int16_t x_padding;
+  u_int16_t y_padding;
+  u_int16_t x_offset;
+  u_int16_t y_offset;
+  u_int16_t spacing;
+  u_int16_t border_size;
+  u_int16_t gap_size;
   double indicator_size;
   unsigned long background_color;
   unsigned long foreground_color;
