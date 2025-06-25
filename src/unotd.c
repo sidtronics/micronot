@@ -1,6 +1,6 @@
 #include "unotd.h"
 #include "utils.h"
-#include <assert.h>
+#include <stdint.h>
 
 void unotd_handle_events(Unotd *unotd) {
 
@@ -31,7 +31,7 @@ void unotd_handle_unmap(Unotd *unotd, Window window) {
   NotificationNode *unmapped = notification_list_find(
       &unotd->open, &previous, unotd_match_window, (void *)(uintptr_t)window);
 
-  assert(unmapped && "unotd_handle_unmapped_notification: node not found");
+  ASSERT(unmapped && "unotd_handle_unmapped_notification: node not found");
 
   switch (unmapped->notification.type) {
 
@@ -82,67 +82,66 @@ void unotd_reposition_visitor(Notification *prev, Notification *curr,
   XMoveWindow(unotd->display, curr->window, curr->win_x, curr->win_y);
 }
 
-void unotd_init_notification_resources(Unotd *unotd,
-                                       Notification *notification) {
+void unotd_init_notification_resources(Unotd *unotd, Notification *target) {
 
-  if (notification->msg_font) {
+  utils_resolve_indicator_font(unotd->display, unotd->config.indicator_size,
+                               target);
 
-    const char *font_name = (const char *)notification->msg_font;
-    notification->msg_font = XftFontOpenName(
+  if (target->msg_font) {
+
+    const char *font_name = (const char *)target->msg_font;
+    target->msg_font = XftFontOpenName(
         unotd->display, DefaultScreen(unotd->display), font_name);
 
-    assert(notification->msg_font &&
+    ASSERT(target->msg_font &&
            "unotd_allocate_ext_resources: failed to assign msg_font");
   } else {
-    notification->msg_font = unotd->msg_font;
+    target->msg_font = unotd->msg_font;
   }
 
-  if (notification->msg_color) {
+  if (target->msg_color) {
 
-    const char *msg_color_str = (const char *)notification->msg_color;
-    notification->msg_color =
+    const char *msg_color_str = (const char *)target->msg_color;
+    target->msg_color =
         utils_allocate_custom_color(unotd->display, msg_color_str);
 
   } else {
-    notification->msg_color = &unotd->msg_color;
+    target->msg_color = &unotd->msg_color;
   }
 
-  if (notification->ind_color) {
+  if (target->ind_color) {
 
-    const char *ind_color_str = (const char *)notification->ind_color;
-    notification->ind_color =
+    const char *ind_color_str = (const char *)target->ind_color;
+    target->ind_color =
         utils_allocate_custom_color(unotd->display, ind_color_str);
 
   } else {
-    notification->ind_color = &unotd->ind_color;
+    target->ind_color = &unotd->ind_color;
   }
 
-  if (notification->frame)
-    free((void *)notification->frame);
+  if (target->frame)
+    free((void *)target->frame);
 }
 
-void unotd_free_notification_resources(Unotd *unotd,
-                                       Notification *notification) {
+void unotd_free_notification_resources(Unotd *unotd, Notification *target) {
 
   int screen = DefaultScreen(unotd->display);
 
-  if (notification->msg_font != unotd->msg_font)
-    XftFontClose(unotd->display, notification->msg_font);
+  if (target->msg_font != unotd->msg_font)
+    XftFontClose(unotd->display, target->msg_font);
 
-  if (notification->ind_color != &unotd->ind_color) {
+  if (target->ind_color != &unotd->ind_color) {
     XftColorFree(unotd->display, DefaultVisual(unotd->display, screen),
-                 DefaultColormap(unotd->display, screen),
-                 notification->ind_color);
-    free(notification->ind_color);
+                 DefaultColormap(unotd->display, screen), target->ind_color);
+    free(target->ind_color);
   }
 
-  if (notification->msg_color != &unotd->msg_color) {
+  if (target->msg_color != &unotd->msg_color) {
     XftColorFree(unotd->display, DefaultVisual(unotd->display, screen),
-                 DefaultColormap(unotd->display, screen),
-                 notification->msg_color);
-    free(notification->msg_color);
+                 DefaultColormap(unotd->display, screen), target->msg_color);
+    free(target->msg_color);
   }
 
-  XftFontClose(unotd->display, notification->ind_font);
-  free((void *)notification->message);
+  XftFontClose(unotd->display, target->ind_font);
+  free((void *)target->message);
 }

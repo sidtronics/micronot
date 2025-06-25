@@ -4,8 +4,6 @@
 #include "list.h"
 #include "notification.h"
 
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-
 typedef struct _Unotd {
 
   Display *display;
@@ -22,18 +20,12 @@ typedef struct _Unotd {
 
 void unotd_handle_events(Unotd *unotd);
 void unotd_handle_unmap(Unotd *unotd, Window window);
-
-bool unotd_match_window(Notification*node, void*data );
-
+bool unotd_match_window(Notification *node, void *data);
 void unotd_update_visitor(Notification *prev, Notification *curr, void *data);
-
 void unotd_reposition_visitor(Notification *prev, Notification *curr,
                               void *data);
 
-void unotd_init_notification_resources(Unotd *unotd,
-                                       Notification *notification);
-
-void unotd_free_notification_resources(Unotd *unotd,
-                                       Notification *notification);
+void unotd_init_notification_resources(Unotd *unotd, Notification *target);
+void unotd_free_notification_resources(Unotd *unotd, Notification *target);
 
 #endif
