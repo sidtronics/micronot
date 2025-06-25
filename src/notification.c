@@ -1,18 +1,9 @@
 #include "notification.h"
-#include <assert.h>
-#include <fontconfig/fontconfig.h>
-#include <stdbool.h>
-#include <wchar.h>
-
-#if 1
-#define ASSERT(x) assert((x))
-#else
-#define ASSERT(...) ((void)0)
-#endif
+#include "utils.h"
 
 static Window _create_notification_window(Display *dpy, u_int16_t win_x,
-                                          u_int16_t win_y, uint8_t win_w,
-                                          uint8_t win_h, uint8_t bor_w,
+                                          u_int16_t win_y, u_int16_t win_w,
+                                          u_int16_t win_h, u_int16_t bor_w,
                                           unsigned long bg_color,
                                           unsigned long bor_color) {
 
@@ -39,34 +30,25 @@ static Window _create_notification_window(Display *dpy, u_int16_t win_x,
   return window;
 }
 
-static void _draw_and_update_spinner(Display *dpy, Notification *notification) {
+static void _draw_indicator(Display *dpy, Notification *notification) {
 
-  const char *end = strchrnul(notification->frame, 30);
+  const char delim = *notification->indicator;
+  const char *end = strchrnul(notification->frame, delim);
 
   XftDrawStringUtf8(notification->draw, notification->ind_color,
                     notification->ind_font, notification->ind_x,
                     notification->ind_y, (FcChar8 *)notification->frame,
                     (size_t)(end - notification->frame));
 
-  if (*end == 0)
-    notification->frame = notification->indicator;
+  if (*(end + 1) == delim)
+    notification->frame = notification->indicator + 1;
   else
     notification->frame = end + 1;
 }
 
 static void _draw_notification(Display *dpy, Notification *notification) {
 
-  if (notification->type == UNOT_SPINNER) {
-    _draw_and_update_spinner(dpy, notification);
-  }
-
-  else if (notification->type == UNOT_MESSAGE) {
-
-    XftDrawStringUtf8(notification->draw, notification->ind_color,
-                      notification->ind_font, notification->ind_x,
-                      notification->ind_y, (FcChar8 *)notification->indicator,
-                      strlen(notification->indicator));
-  }
+  _draw_indicator(dpy, notification);
 
   XftDrawStringUtf8(notification->draw, notification->msg_color,
                     notification->msg_font, notification->msg_x,
@@ -84,14 +66,11 @@ void notification_open(Display *dpy, Config *config,
   ASSERT(notification->msg_font && "notification_open: msg_font not set");
   ASSERT(notification->msg_color && "notification_open: msg_color not set");
 
-  //  notification->ind_font =
-  //      _match_indicator_font(dpy, config, notification->indicator);
-
-  notification->frame = notification->indicator;
+  notification->frame = notification->indicator + 1;
 
   notification->window = _create_notification_window(
       dpy, notification->win_x, notification->win_y, notification->win_w,
-      notification->win_h, config->border_thickness, config->background_color,
+      notification->win_h, config->border_size, config->background_color,
       config->border_color);
 
   int scr_nbr = DefaultScreen(dpy);
@@ -100,7 +79,6 @@ void notification_open(Display *dpy, Config *config,
       XftDrawCreate(dpy, notification->window, DefaultVisual(dpy, scr_nbr),
                     DefaultColormap(dpy, scr_nbr));
 
-  notification->frame = notification->indicator;
   _draw_notification(dpy, notification);
 
   clock_gettime(CLOCK_MONOTONIC, &notification->start_time);
@@ -135,7 +113,7 @@ void notification_update(Display *dpy, Notification *notification) {
       XClearArea(dpy, notification->window, 0, 0, notification->msg_x, 0,
                  False);
 
-      _draw_and_update_spinner(dpy, notification);
+      _draw_indicator(dpy, notification);
 
       notification->last_time = now;
     }

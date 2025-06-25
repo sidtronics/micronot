@@ -25,12 +25,12 @@ typedef struct _Notification {
   const char *indicator;
   XftFont *ind_font;
   XftColor *ind_color;
-  uint8_t ind_x, ind_y;
+  u_int16_t ind_x, ind_y;
 
   const char *message;
   XftFont *msg_font;
   XftColor *msg_color;
-  uint8_t msg_x, msg_y;
+  u_int16_t msg_x, msg_y;
 
   NotificationType type;
   const char *frame;

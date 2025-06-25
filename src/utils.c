@@ -1,24 +1,55 @@
 #include "utils.h"
+#include <stdbool.h>
 
-XftFont *utils_match_indicator_font(Display *dpy, const char *indicator,
-                                    const char *hints) {
+static const char *_prepare_hints(const char *hints, double size, char *buf,
+                                  size_t len) {
+
+  if (hints && strstr(hints, ":size=")) {
+    return hints;
+  }
+
+  if (!hints || *hints == '\0') {
+    snprintf(buf, len, ":size=%.2f", size);
+  } else {
+    snprintf(buf, len, "%s:size=%.2f", hints, size);
+  }
+
+  return buf;
+}
+
+void utils_resolve_indicator_font(Display *dpy, double size,
+                                  Notification *target) {
 
   FcCharSet *charset = FcCharSetCreate();
   FcPattern *pattern, *matched_pattern;
 
-  const char *p = indicator;
-
+  const char delim = *target->indicator;
+  const char *p = target->indicator + 1;
+  bool traversed_frames = false;
   while (*p) {
 
     wchar_t wc;
     int n = mbtowc(&wc, p, MB_CUR_MAX);
-    assert(n > 0 && "mbtowc failed");
+    ASSERT(n > 0 && "utils_resolve_indicator_font: mbtowc() failed");
 
     FcCharSetAddChar(charset, (FcChar32)wc);
     p += n;
-    if (*p == 0 || *p == 30)
+
+    if (*p == delim)
       p++;
+
+    if (*p == delim) {
+      if (target->type == UNOT_MESSAGE || traversed_frames)
+        break;
+      else
+        traversed_frames = true;
+    }
   }
+
+  ASSERT(*p && "utils_resolve_indicator_font: indicator string malformed");
+
+  char hints_buf[64];
+  const char *hints = _prepare_hints(p + 1, size, hints_buf, sizeof(hints_buf));
 
   pattern = FcNameParse((FcChar8 *)hints);
   FcPatternAddCharSet(pattern, FC_CHARSET, charset);
@@ -27,22 +58,21 @@ XftFont *utils_match_indicator_font(Display *dpy, const char *indicator,
 
   FcResult result;
   matched_pattern = FcFontMatch(NULL, pattern, &result);
-  //FcPatternPrint(matched_pattern);
-  assert(result == FcResultMatch);
+  // FcPatternPrint(matched_pattern);
+  ASSERT(result == FcResultMatch &&
+         "utils_resolve_indicator_font: failed matching font");
 
-  XftFont *font = XftFontOpenPattern(dpy, matched_pattern);
-  assert(font && "cant open Xftfont");
+  target->ind_font = XftFontOpenPattern(dpy, matched_pattern);
+  ASSERT(target->ind_font && "utils_resolve_indicator_font: cant open font");
 
   FcCharSetDestroy(charset);
   FcPatternDestroy(pattern);
-
-  return font;
 }
 
 XftColor *utils_allocate_custom_color(Display *dpy, const char *color_str) {
 
   unsigned long color = strtoul(color_str, NULL, 16);
-  // assert(color && "_allocate_custom_color: failed to parse color string");
+  // ASSERT(color && "_allocate_custom_color: failed to parse color string");
 
   XRenderColor xrcolor = {.red = ((color >> 16) & 0xff) * 257,
                           .green = ((color >> 8) & 0xff) * 257,
@@ -62,45 +92,63 @@ XftColor *utils_allocate_custom_color(Display *dpy, const char *color_str) {
 void utils_calculate_notification_layout(Display *dpy, Config *config,
                                          Notification *target) {
 
-  const char *p = target->indicator;
-  XGlyphInfo ind_extents = {0};
+  unsigned short ind_max_height = 0;
+  unsigned short ind_max_width = 0;
+  short ind_max_y = 0;
+
+  const char delim = *target->indicator;
+  const char *p = target->indicator + 1;
+  bool traversed_frames = false;
   while (*p) {
 
-    const char *end = strchrnul(p, 30);
+    const char *end = strchrnul(p, delim);
+
     XGlyphInfo temp;
     XftTextExtentsUtf8(dpy, target->ind_font, (FcChar8 *)p, (size_t)(end - p),
                        &temp);
 
-    if (ind_extents.height < temp.height)
-      ind_extents.height = temp.height;
-    if (ind_extents.width < temp.width)
-      ind_extents.width = temp.width;
-    if (ind_extents.y < temp.y)
-      ind_extents.y = temp.y;
+    if (ind_max_height < temp.height)
+      ind_max_height = temp.height;
 
-    p = end + 1;
+    if (ind_max_width < temp.width)
+      ind_max_width = temp.width;
+
+    if (ind_max_y < temp.y)
+      ind_max_y = temp.y;
+
+    p = end;
+
+    if (*p == delim)
+      p++;
+
+    if (*p == delim) {
+      if (target->type == UNOT_MESSAGE || traversed_frames)
+        break;
+      else
+        traversed_frames = true;
+    }
   }
+
+  ASSERT(*p &&
+         "utils_calculate_notification_layout: malformed indicator string");
 
   XGlyphInfo extents;
   XftTextExtentsUtf8(dpy, target->msg_font, (FcChar8 *)target->message,
                      strlen(target->message), &extents);
 
-  uint8_t x_padding = config->x_padding;
-  uint8_t y_padding = config->y_padding;
-  uint8_t spacing = config->spacing;
-  uint8_t bor_w = config->border_thickness;
-
-  uint8_t msg_w = extents.width;
-  uint8_t ind_w = ind_extents.width;
-
-  uint8_t max_h = (extents.height >= ind_extents.height) ? extents.height
-                                                         : ind_extents.height;
+  u_int16_t x_padding = config->x_padding;
+  u_int16_t y_padding = config->y_padding;
+  u_int16_t spacing = config->spacing;
+  u_int16_t bor_w = config->border_size;
+  u_int16_t msg_w = extents.width;
+  u_int16_t ind_w = ind_max_width;
+  u_int16_t max_h = MAX(extents.height, ind_max_height);
 
   target->win_w = ind_w + spacing + msg_w + x_padding * 2;
   target->win_h = max_h + y_padding * 2;
 
   target->ind_x = x_padding;
-  target->ind_y = ind_extents.y + (target->win_h - ind_extents.height) / 2;
+  target->ind_y = ind_max_y + (target->win_h - ind_max_height) / 2;
 
   target->msg_x = x_padding + ind_w + spacing;
   target->msg_y = extents.y + (target->win_h - extents.height) / 2;
@@ -112,10 +160,10 @@ void utils_reposition_notification(Display *dpy, Config *config,
 
   Screen *screen = DefaultScreenOfDisplay(dpy);
 
-  uint8_t bor_w = config->border_thickness;
-  uint8_t gap_size = config->gap_size;
-  uint8_t x_offset = config->x_offset;
-  uint8_t y_offset = config->y_offset;
+  u_int16_t bor_w = config->border_size;
+  u_int16_t gap_size = config->gap_size;
+  u_int16_t x_offset = config->x_offset;
+  u_int16_t y_offset = config->y_offset;
 
   switch (config->origin) {
 

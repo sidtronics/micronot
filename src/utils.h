@@ -8,8 +8,16 @@
 #include "config.h"
 #include "notification.h"
 
-XftFont *utils_match_indicator_font(Display *dpy, const char *indicator,
-                                    const char *hints);
+#if 1
+#define ASSERT(x) assert((x))
+#else
+#define ASSERT(...) ((void)0)
+#endif
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+void utils_resolve_indicator_font(Display *dpy, double size,
+                                  Notification *target);
 
 XftColor *utils_allocate_custom_color(Display *dpy, const char *color_str);
 

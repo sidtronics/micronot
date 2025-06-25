@@ -1,5 +1,5 @@
 #include "list.h"
-#include <assert.h>
+#include "utils.h"
 
 bool notification_list_is_empty(NotificationList *list) {
 
@@ -11,7 +11,7 @@ bool notification_list_is_empty(NotificationList *list) {
 Notification *notification_list_append(NotificationList *list,
                                        NotificationNode *node) {
 
-  assert(list && "notification_list_append: list is NULL");
+  ASSERT(list && "notification_list_append: list is NULL");
 
   NotificationNode *new_node = (node ? node : malloc(sizeof(NotificationNode)));
   new_node->next = NULL;
@@ -32,7 +32,7 @@ Notification *notification_list_append(NotificationList *list,
 NotificationNode *notification_list_unlink(NotificationList *list,
                                            NotificationNode *prev) {
 
-  assert(list && "notification_list_unlink_next: list is NULL");
+  ASSERT(list && "notification_list_unlink_next: list is NULL");
 
   NotificationNode *target = NULL;
 
@@ -71,8 +71,8 @@ void notification_list_remove(NotificationList *list, NotificationNode *prev) {
 void notification_list_foreach(NotificationList *list, NotificationNode *prev,
                                NotificationVisitor visit, void *data) {
 
-  assert(list && "notification_list_foreach: list is NULL");
-  assert(visit && "notification_list_foreach: callback is NULL");
+  ASSERT(list && "notification_list_foreach: list is NULL");
+  ASSERT(visit && "notification_list_foreach: callback is NULL");
 
   NotificationNode *previous = prev;
   NotificationNode *current = (prev ? prev->next : list->head);
