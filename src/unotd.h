@@ -7,9 +7,9 @@
 typedef struct _Unotd {
 
   Display *display;
+
   Config config;
 
-  Origin origin;
   XftFont *msg_font;
   XftColor msg_color;
   XftColor ind_color;
