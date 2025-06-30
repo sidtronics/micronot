@@ -23,20 +23,23 @@ All messages consist of lines of UTF-8 text and are terminated by a blank line (
 | `frame`          | `<chr><chr>...<chr>`                                                     | `▱▱▱`, `▰▱▱`, `▰▰▱`                           |
 | `success`        | `<chr><chr>...<chr>`                                                     | ``, ``, ``, `OK`                           |
 | `fail`           | `<chr><chr>...<chr>`                                                     | ``, ``, ``, `ERR`                          |
-| `icon`           | `<d><chr><chr>...<chr><d><d><hints>`                                     | ``$▰▱▱$$:size=8``                             |
-| `spinner`        | `<d><frame><d><frame>...<d><frame><d><d><success><d><fail><d><d><hints>` | ``\|\|\|\|\|\|\|\|\|\|\|:style=Bold`` |
+| `icon`           | `<d><chr><chr>...<chr><d><d>[hints]`                                     | ``$▰▱▱$$:size=8``                             |
+| `spinner`        | `<d><frame><d><frame>...<d><frame><d><d><success><d><fail><d><d>[hints]` | ``\|\|\|\|\|\|\|\|\|\|\|:style=Bold`` |
 
 ---
 
 ## Field Definitions
 
-| Field     | Description                                                                                             |
-| --------- | ------------------------------------------------------------------------------------------------------- |
-| `nme`     | Name of spinner (from config)                                                                           |
-| `mfn`     | Message font (Fontconfig pattern string)                                                                |
-| `ifg`     | Icon foreground color (`RRGGBB` hex)                                                                    |
-| `mfg`     | Message foreground color (`RRGGBB` hex)                                                                 |
-| `tmo`     | Timeout in seconds (integer)                                                                            |
+
+| Field | Description |                                                                                            
+|-------|-------------|
+| `msg` | Notification text |
+| `ind` | Indicator string |
+| `nme` | Name of spinner (from config) |
+| `mfn` | Message font (Fontconfig pattern string) |
+| `ifg` | Icon foreground color (`RRGGBB` hex) |
+| `mfg` | Message foreground color (`RRGGBB` hex) |
+| `tmo` | Timeout in seconds (integer) | 
 
 ---
 
@@ -48,12 +51,12 @@ Open a notification with icon.
 
 ```
 MSG
-<message>
-[icon]
-[mfn:]
-[ifg:]
-[mfg:]
-[tmo:]
+<msg>
+<ind>
+[mfn]
+[ifg]
+[mfg]
+[tmo]
 
 ```
 
@@ -61,12 +64,14 @@ MSG
 
 ```
 OK
+
 ```
 
 Or:
 
 ```
 ERROR
+
 ```
 
 ---
@@ -79,12 +84,12 @@ Open a notification with spinner. Returns the window id of opened notification. 
 
 ```
 SPN
-<message>
-[nme:] or [spinner]
-[mfn:]
-[ifg:]
-[mfg:]
-[tmo:]
+<msg>
+<ind>|<nme> 
+[mfn]
+[ifg]
+[mfg]
+[tmo]
 
 ```
 
@@ -92,13 +97,15 @@ SPN
 
 ```
 OK
-<wid>
+wid:<number>
+
 ```
 
 Or:
 
 ```
 ERROR
+
 ```
 
 ---
@@ -111,7 +118,7 @@ Close the spinner notification with window id <wid>. 0 indicates success. 1 indi
 
 ```
 RET
-<wid>
+wid
 0|1
 
 ```
@@ -120,12 +127,14 @@ RET
 
 ```
 OK
+
 ```
 
 Or:
 
 ```
 ERROR
+
 ```
 
 ---
