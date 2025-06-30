@@ -16,8 +16,8 @@ typedef enum _NotificationType {
 
 typedef enum _NotificationState {
 
-  UNOT_STATE_UNMAPPED,
-  UNOT_STATE_MAPPED
+  UNOT_STATE_MAPPED,
+  UNOT_STATE_UNMAPPED
 
 } NotificationState;
 
@@ -34,10 +34,10 @@ typedef struct _Notification {
   XftColor *ind_color;
   u_int16_t ind_x, ind_y;
 
-  char *message;
-  XftFont *msg_font;
-  XftColor *msg_color;
-  u_int16_t msg_x, msg_y;
+  char *text;
+  XftFont *txt_font;
+  XftColor *txt_color;
+  u_int16_t txt_x, txt_y;
 
   NotificationState state;
   NotificationType type;

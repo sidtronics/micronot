@@ -143,25 +143,25 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
          "utils_calculate_notification_layout: malformed indicator string");
 
   XGlyphInfo extents;
-  XftTextExtentsUtf8(dpy, target->msg_font, (FcChar8 *)target->message,
-                     strlen(target->message), &extents);
+  XftTextExtentsUtf8(dpy, target->txt_font, (FcChar8 *)target->text,
+                     strlen(target->text), &extents);
 
   u_int16_t x_padding = config->x_padding;
   u_int16_t y_padding = config->y_padding;
   u_int16_t spacing = config->spacing;
   u_int16_t bor_w = config->border_size;
-  u_int16_t msg_w = extents.width;
+  u_int16_t txt_w = extents.width;
   u_int16_t ind_w = ind_max_width;
   u_int16_t max_h = MAX(extents.height, ind_max_height);
 
-  target->win_w = ind_w + spacing + msg_w + x_padding * 2;
+  target->win_w = ind_w + spacing + txt_w + x_padding * 2;
   target->win_h = max_h + y_padding * 2;
 
   target->ind_x = x_padding;
   target->ind_y = ind_max_y + (target->win_h - ind_max_height) / 2;
 
-  target->msg_x = x_padding + ind_w + spacing;
-  target->msg_y = extents.y + (target->win_h - extents.height) / 2;
+  target->txt_x = x_padding + ind_w + spacing;
+  target->txt_y = extents.y + (target->win_h - extents.height) / 2;
 }
 
 void utils_reposition_notification(Display *dpy, Config *config,

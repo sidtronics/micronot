@@ -40,7 +40,7 @@ int protocol_recv_command(int fd, char *buf, size_t len) {
 
 static int _parse_fields(Notification *target) {
 
-  const char *msg = NULL;
+  const char *txt = NULL;
   const char *ind = NULL;
 
   while (1) {
@@ -56,8 +56,8 @@ static int _parse_fields(Notification *target) {
       return 1;
     }
 
-    if (strcmp(field, "msg") == 0)
-      msg = value;
+    if (strcmp(field, "txt") == 0)
+      txt = value;
 
     else if (strcmp(field, "ind") == 0)
       ind = value;
@@ -67,10 +67,10 @@ static int _parse_fields(Notification *target) {
     }
 
     else if (strcmp(field, "mfn") == 0)
-      target->msg_font = (void *)strdup(value);
+      target->txt_font = (void *)strdup(value);
 
     else if (strcmp(field, "mfg") == 0)
-      target->msg_color = (void *)strdup(value);
+      target->txt_color = (void *)strdup(value);
 
     else if (strcmp(field, "ifg") == 0)
       target->ind_color = (void *)strdup(value);
@@ -99,9 +99,9 @@ static int _parse_fields(Notification *target) {
     }
   }
 
-  if (msg == NULL) {
+  if (txt == NULL) {
 
-    fprintf(stderr, "error: message not found");
+    fprintf(stderr, "error: text not found");
     return 1;
   }
 
@@ -111,12 +111,12 @@ static int _parse_fields(Notification *target) {
     return 1;
   }
 
-  size_t msg_len = strlen(msg) + 1;
+  size_t txt_len = strlen(txt) + 1;
   size_t ind_len = strlen(ind) + 1;
-  size_t len = msg_len + ind_len;
-  target->message = malloc(len);
-  memcpy(target->message, msg, msg_len);
-  target->indicator = target->message + msg_len;
+  size_t len = txt_len + ind_len;
+  target->text = malloc(len);
+  memcpy(target->text, txt, txt_len);
+  target->indicator = target->text + txt_len;
   memcpy(target->indicator, ind, ind_len);
   return 0;
 }
@@ -138,8 +138,8 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     ASSERT(node && "protocol_handle_command: malloc failed");
     Notification *not = &node->notification;
     not->window = 0;
-    not->msg_font = NULL;
-    not->msg_color = NULL;
+    not->txt_font = NULL;
+    not->txt_color = NULL;
     not->ind_color = NULL;
     not->type = UNOT_TYPE_MESSAGE;
     not->state = UNOT_STATE_UNMAPPED;
@@ -162,8 +162,8 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     ASSERT(node && "protocol_handle_command: malloc failed");
     Notification *not = &node->notification;
     not->window = 0;
-    not->msg_font = NULL;
-    not->msg_color = NULL;
+    not->txt_font = NULL;
+    not->txt_color = NULL;
     not->ind_color = NULL;
     not->type = UNOT_TYPE_SPINNER;
     not->state = UNOT_STATE_UNMAPPED;
@@ -255,9 +255,9 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
 ERROR:
   if (node != NULL) {
 
-    free((void *)node->notification.message);
-    free(node->notification.msg_font);
-    free(node->notification.msg_color);
+    free((void *)node->notification.text);
+    free(node->notification.txt_font);
+    free(node->notification.txt_color);
     free(node->notification.ind_color);
     free(node);
   }

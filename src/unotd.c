@@ -97,32 +97,32 @@ void unotd_init_notification_resources(Unotd *unotd, Notification *target) {
   utils_resolve_indicator_font(unotd->display, unotd->config.indicator_size,
                                target);
 
-  if (target->msg_font) {
+  if (target->txt_font) {
 
-    char *font_name = (void *)target->msg_font;
+    char *font_name = (void *)target->txt_font;
 
-    target->msg_font = XftFontOpenName(
+    target->txt_font = XftFontOpenName(
         unotd->display, DefaultScreen(unotd->display), font_name);
 
-    ASSERT(target->msg_font &&
-           "unotd_allocate_ext_resources: failed to assign msg_font");
+    ASSERT(target->txt_font &&
+           "unotd_allocate_ext_resources: failed to assign txt_font");
 
     free(font_name);
 
   } else {
-    target->msg_font = unotd->msg_font;
+    target->txt_font = unotd->txt_font;
   }
 
-  if (target->msg_color) {
+  if (target->txt_color) {
 
-    char *msg_color_str = (void *)target->msg_color;
-    target->msg_color =
-        utils_allocate_custom_color(unotd->display, msg_color_str);
+    char *txt_color_str = (void *)target->txt_color;
+    target->txt_color =
+        utils_allocate_custom_color(unotd->display, txt_color_str);
 
-    free(msg_color_str);
+    free(txt_color_str);
 
   } else {
-    target->msg_color = &unotd->msg_color;
+    target->txt_color = &unotd->txt_color;
   }
 
   if (target->ind_color) {
@@ -142,8 +142,8 @@ void unotd_free_notification_resources(Unotd *unotd, Notification *target) {
 
   int screen = DefaultScreen(unotd->display);
 
-  if (target->msg_font != unotd->msg_font)
-    XftFontClose(unotd->display, target->msg_font);
+  if (target->txt_font != unotd->txt_font)
+    XftFontClose(unotd->display, target->txt_font);
 
   if (target->ind_color != &unotd->ind_color) {
     XftColorFree(unotd->display, DefaultVisual(unotd->display, screen),
@@ -151,12 +151,12 @@ void unotd_free_notification_resources(Unotd *unotd, Notification *target) {
     free(target->ind_color);
   }
 
-  if (target->msg_color != &unotd->msg_color) {
+  if (target->txt_color != &unotd->txt_color) {
     XftColorFree(unotd->display, DefaultVisual(unotd->display, screen),
-                 DefaultColormap(unotd->display, screen), target->msg_color);
-    free(target->msg_color);
+                 DefaultColormap(unotd->display, screen), target->txt_color);
+    free(target->txt_color);
   }
 
   XftFontClose(unotd->display, target->ind_font);
-  free(target->message);
+  free(target->text);
 }

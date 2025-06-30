@@ -49,12 +49,12 @@ static Notification *append_new_not(Unotd *unotd, NotificationType t,
   Notification *new_not = notification_list_append(&unotd->open, NULL);
   new_not->window = 0;
   new_not->frame = NULL;
-  new_not->msg_font = NULL;
+  new_not->txt_font = NULL;
   new_not->ind_color = NULL;
-  new_not->msg_color = NULL;
+  new_not->txt_color = NULL;
   new_not->timeout = to;
   new_not->type = t;
-  new_not->message = strdup(m);
+  new_not->text = strdup(m);
   new_not->indicator = i;
 
   return new_not;
@@ -82,13 +82,13 @@ int main() {
 
   setlocale(LC_ALL, "en_US.utf8");
   unotd.display = XOpenDisplay(NULL);
-  unotd.msg_font = XftFontOpenName(unotd.display, DefaultScreen(unotd.display),
+  unotd.txt_font = XftFontOpenName(unotd.display, DefaultScreen(unotd.display),
                                    "FiraCodeNerdFontPropo:style=Bold:size=10");
 
   allocate_color(unotd.display, unotd.config.foreground_color,
                  &unotd.ind_color);
   allocate_color(unotd.display, unotd.config.foreground_color,
-                 &unotd.msg_color);
+                 &unotd.txt_color);
 
   server_init(&unotd);
 
@@ -124,7 +124,7 @@ int main() {
   //        append_new_not(&unotd, UNOT_TYPE_MESSAGE, "WARN: Low Battery",
   //        "|||", -1);
   //    not->ind_color = (XftColor *)"0xffa500";
-  //    not->msg_color = (XftColor *)"0xffa500";
+  //    not->txt_color = (XftColor *)"0xffa500";
 
   sem_wait(&unotd.notification_count);
 

@@ -33,7 +33,7 @@ All messages consist of lines of UTF-8 text and are terminated by a blank line (
 
 | Field | Description |                                                                                            
 |-------|-------------|
-| `msg` | Notification text |
+| `txt` | Notification text |
 | `ind` | Indicator string |
 | `nme` | Name of spinner (from config) |
 | `mfn` | Message font (Fontconfig pattern string) |
@@ -51,7 +51,7 @@ Open a notification with icon.
 
 ```
 MSG
-<msg>
+<txt>
 <ind>
 [mfn]
 [ifg]
@@ -84,7 +84,7 @@ Open a notification with spinner. Returns the window id of opened notification. 
 
 ```
 SPN
-<msg>
+<txt>
 <ind>|<nme> 
 [mfn]
 [ifg]

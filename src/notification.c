@@ -52,10 +52,10 @@ void notification_draw(Display *dpy, Notification *notification) {
 
   _draw_indicator(dpy, notification);
 
-  XftDrawStringUtf8(notification->draw, notification->msg_color,
-                    notification->msg_font, notification->msg_x,
-                    notification->msg_y, (FcChar8 *)notification->message,
-                    strlen(notification->message));
+  XftDrawStringUtf8(notification->draw, notification->txt_color,
+                    notification->txt_font, notification->txt_x,
+                    notification->txt_y, (FcChar8 *)notification->text,
+                    strlen(notification->text));
 
   clock_gettime(CLOCK_MONOTONIC, &notification->start_time);
   notification->last_time = notification->start_time;
@@ -67,9 +67,9 @@ void notification_open(Display *dpy, Config *config,
   ASSERT(notification->indicator && "notification_open: indicator not set");
   ASSERT(notification->ind_font && "notification_open: ind_font not set");
   ASSERT(notification->ind_color && "notification_open: ind_color not set");
-  ASSERT(notification->message && "notification_open: message not set");
-  ASSERT(notification->msg_font && "notification_open: msg_font not set");
-  ASSERT(notification->msg_color && "notification_open: msg_color not set");
+  ASSERT(notification->text && "notification_open: text not set");
+  ASSERT(notification->txt_font && "notification_open: txt_font not set");
+  ASSERT(notification->txt_color && "notification_open: txt_color not set");
 
   notification->frame = notification->indicator + 1;
 
@@ -114,7 +114,7 @@ void notification_update(Display *dpy, Notification *notification) {
 
     if (elapsed >= 200) {
 
-      XClearArea(dpy, notification->window, 0, 0, notification->msg_x, 0,
+      XClearArea(dpy, notification->window, 0, 0, notification->txt_x, 0,
                  False);
 
       _draw_indicator(dpy, notification);

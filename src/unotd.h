@@ -22,8 +22,8 @@ typedef struct _Unotd {
   int listener;
   PollSet set;
 
-  XftFont *msg_font;
-  XftColor msg_color;
+  XftFont *txt_font;
+  XftColor txt_color;
   XftColor ind_color;
 
   NotificationList open;
