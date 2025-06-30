@@ -23,6 +23,7 @@ typedef struct _Config {
   u_int16_t spacing;
   u_int16_t border_size;
   u_int16_t gap_size;
+  int16_t timeout;
   double indicator_size;
   unsigned long background_color;
   unsigned long foreground_color;

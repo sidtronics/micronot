@@ -46,7 +46,9 @@ static void _draw_indicator(Display *dpy, Notification *notification) {
     notification->frame = end + 1;
 }
 
-static void _draw_notification(Display *dpy, Notification *notification) {
+void notification_draw(Display *dpy, Notification *notification) {
+
+  XClearWindow(dpy, notification->window);
 
   _draw_indicator(dpy, notification);
 
@@ -54,6 +56,9 @@ static void _draw_notification(Display *dpy, Notification *notification) {
                     notification->msg_font, notification->msg_x,
                     notification->msg_y, (FcChar8 *)notification->message,
                     strlen(notification->message));
+
+  clock_gettime(CLOCK_MONOTONIC, &notification->start_time);
+  notification->last_time = notification->start_time;
 }
 
 void notification_open(Display *dpy, Config *config,
@@ -73,16 +78,15 @@ void notification_open(Display *dpy, Config *config,
       notification->win_h, config->border_size, config->background_color,
       config->border_color);
 
+  notification->state = UNOT_STATE_MAPPED;
+
   int scr_nbr = DefaultScreen(dpy);
 
   notification->draw =
       XftDrawCreate(dpy, notification->window, DefaultVisual(dpy, scr_nbr),
                     DefaultColormap(dpy, scr_nbr));
 
-  _draw_notification(dpy, notification);
-
-  clock_gettime(CLOCK_MONOTONIC, &notification->start_time);
-  notification->last_time = notification->start_time;
+  notification_draw(dpy, notification);
 }
 
 void notification_close(Display *dpy, Notification *notification) {
@@ -103,7 +107,7 @@ void notification_update(Display *dpy, Notification *notification) {
     XSync(dpy, False);
   }
 
-  else if (notification->type == UNOT_SPINNER) {
+  else if (notification->type == UNOT_TYPE_SPINNER) {
 
     elapsed = (now.tv_sec - notification->last_time.tv_sec) * 1000 +
               (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;

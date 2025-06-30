@@ -1,12 +1,16 @@
+#include "server.h"
 #include "unotd.h"
 #include <assert.h>
 #include <locale.h>
+#include <poll.h>
 
 Unotd unotd = {
 
-    .open = {.head = NULL, .tail = NULL},
+    .open = {.head = NULL, .tail = NULL, .lock = PTHREAD_MUTEX_INITIALIZER},
 
-    .wait = {.head = NULL, .tail = NULL},
+    .wait = {.head = NULL, .tail = NULL, .lock = PTHREAD_MUTEX_INITIALIZER},
+
+    .notification_opened = PTHREAD_COND_INITIALIZER,
 
     .config =
         {
@@ -18,6 +22,7 @@ Unotd unotd = {
             .border_size = 2,
             .gap_size = 7,
             .indicator_size = 14.0,
+            .timeout = 60,
             .background_color = 0x000000,
             .foreground_color = 0x00FF00,
             .border_color = 0x00FF00,
@@ -39,7 +44,7 @@ static void allocate_color(Display *dpy, unsigned long color, XftColor *res) {
 }
 
 static Notification *append_new_not(Unotd *unotd, NotificationType t,
-                                    const char *m, const char *i, int to) {
+                                    const char *m, char *i, int to) {
 
   Notification *new_not = notification_list_append(&unotd->open, NULL);
   new_not->window = 0;
@@ -55,6 +60,24 @@ static Notification *append_new_not(Unotd *unotd, NotificationType t,
   return new_not;
 }
 
+void *poll_loop(void *arg) {
+
+  Unotd *unotd = (Unotd *)arg;
+
+  while (1) {
+    int poll_count = poll(unotd->set.fds, unotd->set.count, -1);
+
+    if (poll_count == -1) {
+      perror("poll");
+      exit(1);
+    }
+
+    server_process_connections(unotd);
+  }
+
+  return NULL;
+}
+
 int main() {
 
   setlocale(LC_ALL, "en_US.utf8");
@@ -67,34 +90,50 @@ int main() {
   allocate_color(unotd.display, unotd.config.foreground_color,
                  &unotd.msg_color);
 
-  append_new_not(&unotd, UNOT_SPINNER, "Ascii Spinner",
-                 "$[-]$[\\]$[|]$[/]$$[O]$[X]$$", 20);
+  server_init(&unotd);
 
-  append_new_not(&unotd, UNOT_SPINNER, "Updating system",
-                 "|||||||||||:style=Bold", 20);
+  sem_init(&unotd.notification_count, 0, 0);
 
-  append_new_not(&unotd, UNOT_MESSAGE, "Stay Hydrated!", "|💧||:size=12", 10);
+  pthread_t poll_thread;
+  if (pthread_create(&poll_thread, NULL, poll_loop, &unotd) != 0) {
+    perror("pthread_create");
+    exit(1);
+  }
 
-  append_new_not(&unotd, UNOT_SPINNER, "Syncing mirrors",
-                 "|🌍|🌎|🌏||✔️|✖️||", 20);
+  //    append_new_not(&unotd, UNOT_TYPE_SPINNER, "Ascii Spinner",
+  //                   "$[-]$[\\]$[|]$[/]$$[O]$[X]$$", 20);
+  //
+  //    append_new_not(&unotd, UNOT_TYPE_SPINNER, "Updating system",
+  //                   "|||||||||||:style=Bold", 20);
+  //
+  //    append_new_not(&unotd, UNOT_TYPE_MESSAGE, "Stay Hydrated!",
+  //    "|💧||:size=12", 10);
+  //
+  //    append_new_not(&unotd, UNOT_TYPE_SPINNER, "Syncing mirrors",
+  //                   "|🌍|🌎|🌏||✔️|✖️||", 20);
+  //
+  //    append_new_not(&unotd, UNOT_TYPE_MESSAGE, "Now playing: FATRAT",
+  //    "|🎶||", 30);
+  //
+  //    Notification *ker = append_new_not(
+  //        &unotd, UNOT_TYPE_SPINNER, "Compiling Kernel",
+  //        "|▱▱▱|▰▱▱|▰▰▱|▰▰▰|▰▰▱|▰▱▱|▱▱▱||S|F||", -1);
+  //    ker->ind_color = (XftColor *)"0x235486";
+  //
+  //    Notification *not =
+  //        append_new_not(&unotd, UNOT_TYPE_MESSAGE, "WARN: Low Battery",
+  //        "|||", -1);
+  //    not->ind_color = (XftColor *)"0xffa500";
+  //    not->msg_color = (XftColor *)"0xffa500";
 
-  append_new_not(&unotd, UNOT_MESSAGE, "Now playing: FATRAT", "|🎶||", 30);
-
-  Notification *ker = append_new_not(
-      &unotd, UNOT_SPINNER, "Compiling Kernel",
-      "|▱▱▱|▰▱▱|▰▰▱|▰▰▰|▰▰▱|▰▱▱|▱▱▱||S|F||", -1);
-  ker->ind_color = (XftColor *)"0x235486";
-
-  Notification *not =
-      append_new_not(&unotd, UNOT_MESSAGE, "WARN: Low Battery", "|||", -1);
-  not->ind_color = (XftColor *)"0xffa500";
-  not->msg_color = (XftColor *)"0xffa500";
+  sem_wait(&unotd.notification_count);
 
   while (1) {
     unotd_handle_events(&unotd);
     notification_list_foreach(&unotd.open, NULL, unotd_update_visitor, &unotd);
+    XSync(unotd.display, False);
 
-    struct timespec ts = {0, 10 * 1000 * 1000};
+    struct timespec ts = {0, 50 * 1000 * 1000};
     nanosleep(&ts, NULL);
   }
 }

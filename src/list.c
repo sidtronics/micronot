@@ -3,7 +3,9 @@
 
 bool notification_list_is_empty(NotificationList *list) {
 
+  pthread_mutex_lock(&list->lock);
   bool res = (list->head == NULL);
+  pthread_mutex_unlock(&list->lock);
 
   return res;
 }
@@ -16,6 +18,7 @@ Notification *notification_list_append(NotificationList *list,
   NotificationNode *new_node = (node ? node : malloc(sizeof(NotificationNode)));
   new_node->next = NULL;
 
+  pthread_mutex_lock(&list->lock);
   if (list->tail) {
     list->tail->next = new_node;
   }
@@ -25,6 +28,7 @@ Notification *notification_list_append(NotificationList *list,
   }
 
   list->tail = new_node;
+  pthread_mutex_unlock(&list->lock);
 
   return &new_node->notification;
 }
@@ -36,6 +40,7 @@ NotificationNode *notification_list_unlink(NotificationList *list,
 
   NotificationNode *target = NULL;
 
+  pthread_mutex_lock(&list->lock);
   if (prev == NULL) {
     target = list->head;
     if (target) {
@@ -55,6 +60,7 @@ NotificationNode *notification_list_unlink(NotificationList *list,
   if (target == list->tail) {
     list->tail = prev;
   }
+  pthread_mutex_unlock(&list->lock);
 
   return target;
 }
@@ -62,10 +68,7 @@ NotificationNode *notification_list_unlink(NotificationList *list,
 void notification_list_remove(NotificationList *list, NotificationNode *prev) {
 
   NotificationNode *target = notification_list_unlink(list, prev);
-
-  if (target) {
-    free(target);
-  }
+  free(target);
 }
 
 void notification_list_foreach(NotificationList *list, NotificationNode *prev,
@@ -74,6 +77,7 @@ void notification_list_foreach(NotificationList *list, NotificationNode *prev,
   ASSERT(list && "notification_list_foreach: list is NULL");
   ASSERT(visit && "notification_list_foreach: callback is NULL");
 
+  pthread_mutex_lock(&list->lock);
   NotificationNode *previous = prev;
   NotificationNode *current = (prev ? prev->next : list->head);
   while (current) {
@@ -84,6 +88,7 @@ void notification_list_foreach(NotificationList *list, NotificationNode *prev,
     previous = current;
     current = current->next;
   }
+  pthread_mutex_unlock(&list->lock);
 }
 
 NotificationNode *notification_list_find(NotificationList *list,
@@ -91,12 +96,15 @@ NotificationNode *notification_list_find(NotificationList *list,
                                          NotificationPredicate match,
                                          void *data) {
 
+  pthread_mutex_lock(&list->lock);
   NotificationNode *previous = NULL;
   NotificationNode *current = list->head;
 
   while (current) {
     if (match(&current->notification, data)) {
       *prev = previous;
+
+      pthread_mutex_unlock(&list->lock);
       return current;
     }
     previous = current;
@@ -104,5 +112,7 @@ NotificationNode *notification_list_find(NotificationList *list,
   }
 
   *prev = NULL;
+
+  pthread_mutex_unlock(&list->lock);
   return NULL;
 }

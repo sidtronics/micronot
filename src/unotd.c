@@ -29,46 +29,53 @@ void unotd_handle_unmap(Unotd *unotd, Window window) {
 
   NotificationNode *previous = NULL;
   NotificationNode *unmapped = notification_list_find(
-      &unotd->open, &previous, unotd_match_window, (void *)(uintptr_t)window);
+      &unotd->open, &previous, utils_match_window, (void *)(uintptr_t)window);
 
   ASSERT(unmapped && "unotd_handle_unmapped_notification: node not found");
 
   switch (unmapped->notification.type) {
 
-  case UNOT_MESSAGE:
+  case UNOT_TYPE_MESSAGE:
     unotd_free_notification_resources(unotd, &unmapped->notification);
     notification_close(unotd->display, &unmapped->notification);
     notification_list_remove(&unotd->open, previous);
     break;
 
-  case UNOT_SPINNER:
+  case UNOT_TYPE_SPINNER:
+    unmapped->notification.state = UNOT_STATE_UNMAPPED;
     notification_list_unlink(&unotd->open, previous);
-    notification_list_append(&unotd->open, unmapped);
+    notification_list_append(&unotd->wait, unmapped);
     break;
   }
 
-  if (!notification_list_is_empty(&unotd->open)) {
+  notification_list_foreach(&unotd->open, previous, unotd_reposition_visitor,
+                            unotd);
 
-    notification_list_foreach(&unotd->open, previous, unotd_reposition_visitor,
-                              unotd);
-  }
-}
-
-bool unotd_match_window(Notification *node, void *data) {
-
-  Window target = (Window)(uintptr_t)data;
-  return node->window == target;
+  sem_wait(&unotd->notification_count);
 }
 
 void unotd_update_visitor(Notification *prev, Notification *curr, void *data) {
 
   Unotd *unotd = (Unotd *)data;
 
-  if (curr->window == 0) {
-    unotd_init_notification_resources(unotd, curr);
-    utils_calculate_notification_layout(unotd->display, &unotd->config, curr);
-    utils_reposition_notification(unotd->display, &unotd->config, prev, curr);
-    notification_open(unotd->display, &unotd->config, curr);
+  if (curr->state == UNOT_STATE_UNMAPPED) {
+
+    if (curr->window == 0) {
+      unotd_init_notification_resources(unotd, curr);
+      utils_calculate_notification_layout(unotd->display, &unotd->config, curr);
+      utils_reposition_notification(unotd->display, &unotd->config, prev, curr);
+      notification_open(unotd->display, &unotd->config, curr);
+      pthread_cond_signal(&unotd->notification_opened);
+    }
+
+    else {
+      utils_reposition_notification(unotd->display, &unotd->config, prev, curr);
+      XMoveWindow(unotd->display, curr->window, curr->win_x, curr->win_y);
+      XMapWindow(unotd->display, curr->window);
+      notification_draw(unotd->display, curr);
+      curr->state = UNOT_STATE_MAPPED;
+    }
+
   } else {
     notification_update(unotd->display, curr);
   }
@@ -78,8 +85,11 @@ void unotd_reposition_visitor(Notification *prev, Notification *curr,
                               void *data) {
 
   Unotd *unotd = (Unotd *)data;
-  utils_reposition_notification(unotd->display, &unotd->config, prev, curr);
-  XMoveWindow(unotd->display, curr->window, curr->win_x, curr->win_y);
+
+  if (curr->state == UNOT_STATE_MAPPED) {
+    utils_reposition_notification(unotd->display, &unotd->config, prev, curr);
+    XMoveWindow(unotd->display, curr->window, curr->win_x, curr->win_y);
+  }
 }
 
 void unotd_init_notification_resources(Unotd *unotd, Notification *target) {
@@ -89,21 +99,27 @@ void unotd_init_notification_resources(Unotd *unotd, Notification *target) {
 
   if (target->msg_font) {
 
-    const char *font_name = (const char *)target->msg_font;
+    char *font_name = (void *)target->msg_font;
+
     target->msg_font = XftFontOpenName(
         unotd->display, DefaultScreen(unotd->display), font_name);
 
     ASSERT(target->msg_font &&
            "unotd_allocate_ext_resources: failed to assign msg_font");
+
+    free(font_name);
+
   } else {
     target->msg_font = unotd->msg_font;
   }
 
   if (target->msg_color) {
 
-    const char *msg_color_str = (const char *)target->msg_color;
+    char *msg_color_str = (void *)target->msg_color;
     target->msg_color =
         utils_allocate_custom_color(unotd->display, msg_color_str);
+
+    free(msg_color_str);
 
   } else {
     target->msg_color = &unotd->msg_color;
@@ -111,16 +127,15 @@ void unotd_init_notification_resources(Unotd *unotd, Notification *target) {
 
   if (target->ind_color) {
 
-    const char *ind_color_str = (const char *)target->ind_color;
+    char *ind_color_str = (void *)target->ind_color;
     target->ind_color =
         utils_allocate_custom_color(unotd->display, ind_color_str);
+
+    free(ind_color_str);
 
   } else {
     target->ind_color = &unotd->ind_color;
   }
-
-  if (target->frame)
-    free((void *)target->frame);
 }
 
 void unotd_free_notification_resources(Unotd *unotd, Notification *target) {
@@ -143,5 +158,5 @@ void unotd_free_notification_resources(Unotd *unotd, Notification *target) {
   }
 
   XftFontClose(unotd->display, target->ind_font);
-  free((void *)target->message);
+  free(target->message);
 }

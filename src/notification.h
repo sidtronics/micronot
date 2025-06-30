@@ -9,10 +9,17 @@
 
 typedef enum _NotificationType {
 
-  UNOT_MESSAGE,
-  UNOT_SPINNER
+  UNOT_TYPE_MESSAGE,
+  UNOT_TYPE_SPINNER
 
 } NotificationType;
+
+typedef enum _NotificationState {
+
+  UNOT_STATE_UNMAPPED,
+  UNOT_STATE_MAPPED
+
+} NotificationState;
 
 typedef struct _Notification {
 
@@ -22,16 +29,17 @@ typedef struct _Notification {
 
   XftDraw *draw;
 
-  const char *indicator;
+  char *indicator;
   XftFont *ind_font;
   XftColor *ind_color;
   u_int16_t ind_x, ind_y;
 
-  const char *message;
+  char *message;
   XftFont *msg_font;
   XftColor *msg_color;
   u_int16_t msg_x, msg_y;
 
+  NotificationState state;
   NotificationType type;
   const char *frame;
   int timeout;
@@ -43,6 +51,8 @@ typedef struct _Notification {
 
 void notification_open(Display *dpy, Config *config,
                        Notification *notification);
+
+void notification_draw(Display *dpy, Notification *notification);
 
 void notification_update(Display *dpy, Notification *notification);
 

@@ -4,6 +4,7 @@
 #include <X11/Xft/Xft.h>
 #include <assert.h>
 #include <fontconfig/fontconfig.h>
+#include <stdbool.h>
 
 #include "config.h"
 #include "notification.h"
@@ -16,6 +17,8 @@
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+bool utils_match_window(Notification *node, void *data);
+
 void utils_resolve_indicator_font(Display *dpy, double size,
                                   Notification *target);
 
@@ -27,5 +30,7 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
 void utils_reposition_notification(Display *dpy, Config *config,
                                    Notification *previous,
                                    Notification *target);
+
+void utils_transform_notification(Notification *target, unsigned long ret);
 
 #endif

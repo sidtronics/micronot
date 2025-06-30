@@ -12,6 +12,8 @@ add_executable(
     src/utils.c
     src/list.c
     src/notification.c
+    src/server.c
+    src/protocol.c
 )
 
 include_directories (/usr/include/freetype2)

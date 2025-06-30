@@ -3,6 +3,7 @@
 
 #include "notification.h"
 #include <stdbool.h>
+#include <pthread.h>
 
 typedef struct _NotificationNode NotificationNode;
 
@@ -10,6 +11,7 @@ typedef struct _NotificationList {
 
   NotificationNode *head;
   NotificationNode *tail;
+  pthread_mutex_t lock;
 
 } NotificationList;
 

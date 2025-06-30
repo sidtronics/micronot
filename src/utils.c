@@ -1,5 +1,15 @@
 #include "utils.h"
 #include <stdbool.h>
+#include <stdint.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+
+bool utils_match_window(Notification *node, void *data) {
+
+  Window target = (Window)(uintptr_t)data;
+  return node->window == target;
+}
 
 static const char *_prepare_hints(const char *hints, double size, char *buf,
                                   size_t len) {
@@ -39,7 +49,7 @@ void utils_resolve_indicator_font(Display *dpy, double size,
       p++;
 
     if (*p == delim) {
-      if (target->type == UNOT_MESSAGE || traversed_frames)
+      if (target->type == UNOT_TYPE_MESSAGE || traversed_frames)
         break;
       else
         traversed_frames = true;
@@ -122,7 +132,7 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
       p++;
 
     if (*p == delim) {
-      if (target->type == UNOT_MESSAGE || traversed_frames)
+      if (target->type == UNOT_TYPE_MESSAGE || traversed_frames)
         break;
       else
         traversed_frames = true;
@@ -201,4 +211,26 @@ void utils_reposition_notification(Display *dpy, Config *config,
                                                 2 * bor_w - y_offset);
     break;
   }
+}
+
+void utils_transform_notification(Notification *target, unsigned long ret) {
+
+  ASSERT(target->type != UNOT_TYPE_MESSAGE &&
+         "utils_transform_notification: incompatible type");
+
+  const char delim = *target->indicator;
+  char *p;
+  for (p = (target->indicator + 1); *p != delim && *p != 0;
+       p = (strchrnul(p, delim) + 1)) {
+  }
+
+  ASSERT(*p && "utils_transform_notification: malformed indicator string");
+
+  if (ret != 0)
+    p = strchrnul(p + 1, delim);
+
+  target->indicator = p;
+  target->frame = p + 1;
+  target->type = UNOT_TYPE_MESSAGE;
+  clock_gettime(CLOCK_MONOTONIC, &target->start_time);
 }
