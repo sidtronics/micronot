@@ -7,6 +7,7 @@
 #include <stdbool.h>
 
 #include "config.h"
+#include "list.h"
 #include "notification.h"
 
 #if 1
@@ -17,8 +18,6 @@
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-bool utils_match_window(Notification *node, void *data);
-
 void utils_resolve_indicator_font(Display *dpy, double size,
                                   Notification *target);
 
@@ -28,8 +27,7 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
                                          Notification *target);
 
 void utils_reposition_notification(Display *dpy, Config *config,
-                                   Notification *previous,
-                                   Notification *target);
+                                   Notification *prev, Notification *target);
 
 void utils_transform_notification(Notification *target, unsigned long ret);
 

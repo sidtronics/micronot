@@ -5,12 +5,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-bool utils_match_window(Notification *node, void *data) {
-
-  Window target = (Window)(uintptr_t)data;
-  return node->window == target;
-}
-
 static const char *_prepare_hints(const char *hints, double size, char *buf,
                                   size_t len) {
 
@@ -165,8 +159,7 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
 }
 
 void utils_reposition_notification(Display *dpy, Config *config,
-                                   Notification *previous,
-                                   Notification *target) {
+                                   Notification *prev, Notification *target) {
 
   Screen *screen = DefaultScreenOfDisplay(dpy);
 
@@ -179,36 +172,36 @@ void utils_reposition_notification(Display *dpy, Config *config,
 
   case UNOT_ORIGIN_TOP_RIGHT:
     target->win_x = screen->width - target->win_w - 2 * bor_w - x_offset;
-    target->win_y = previous
-                        ? (target->win_y = previous->win_y + previous->win_h +
-                                           2 * bor_w + gap_size)
-                        : y_offset;
+    target->win_y =
+        prev
+            ? (target->win_y = prev->win_y + prev->win_h + 2 * bor_w + gap_size)
+            : y_offset;
 
     break;
 
   case UNOT_ORIGIN_TOP_LEFT:
     target->win_x = x_offset;
-    target->win_y = previous
-                        ? (target->win_y = previous->win_y + previous->win_h +
-                                           2 * bor_w + gap_size)
-                        : y_offset;
+    target->win_y =
+        prev
+            ? (target->win_y = prev->win_y + prev->win_h + 2 * bor_w + gap_size)
+            : y_offset;
     break;
 
   case UNOT_ORIGIN_BOTTOM_RIGHT:
     target->win_x = screen->width - target->win_w - 2 * bor_w - x_offset;
-    target->win_y = previous ? (target->win_y = previous->win_y - gap_size -
-                                                target->win_h - 2 * bor_w)
-                             : (target->win_y = screen->height - target->win_h -
-                                                2 * bor_w - y_offset);
+    target->win_y = prev ? (target->win_y = prev->win_y - gap_size -
+                                            target->win_h - 2 * bor_w)
+                         : (target->win_y = screen->height - target->win_h -
+                                            2 * bor_w - y_offset);
 
     break;
 
   case UNOT_ORIGIN_BOTTOM_LEFT:
     target->win_x = x_offset;
-    target->win_y = previous ? (target->win_y = previous->win_y - gap_size -
-                                                target->win_h - 2 * bor_w)
-                             : (target->win_y = screen->height - target->win_h -
-                                                2 * bor_w - y_offset);
+    target->win_y = prev ? (target->win_y = prev->win_y - gap_size -
+                                            target->win_h - 2 * bor_w)
+                         : (target->win_y = screen->height - target->win_h -
+                                            2 * bor_w - y_offset);
     break;
   }
 }
@@ -228,6 +221,8 @@ void utils_transform_notification(Notification *target, unsigned long ret) {
 
   if (ret != 0)
     p = strchrnul(p + 1, delim);
+
+  ASSERT(*p && "utils_transform_notification: malformed indicator string");
 
   target->indicator = p;
   target->frame = p + 1;

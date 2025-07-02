@@ -78,8 +78,6 @@ void notification_open(Display *dpy, Config *config,
       notification->win_h, config->border_size, config->background_color,
       config->border_color);
 
-  notification->state = UNOT_STATE_MAPPED;
-
   int scr_nbr = DefaultScreen(dpy);
 
   notification->draw =
@@ -89,25 +87,41 @@ void notification_open(Display *dpy, Config *config,
   notification_draw(dpy, notification);
 }
 
+void notification_move(Display *dpy, Notification *notification) {
+
+  XMoveWindow(dpy, notification->window, notification->win_x,
+              notification->win_y);
+}
+
 void notification_close(Display *dpy, Notification *notification) {
 
   XftDrawDestroy(notification->draw);
   XDestroyWindow(dpy, notification->window);
 }
 
-void notification_update(Display *dpy, Notification *notification) {
+bool notification_update(Display *dpy, Notification *notification) {
 
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
   long elapsed = (now.tv_sec - notification->start_time.tv_sec) * 1000 +
                  (now.tv_nsec - notification->start_time.tv_nsec) / 1000000;
 
-  if (notification->timeout > 0 && elapsed >= notification->timeout * 1000) {
-    XUnmapWindow(dpy, notification->window);
-    XSync(dpy, False);
+  if (XPending(dpy)) {
+    XEvent e;
+    if (XCheckWindowEvent(dpy, notification->window, ButtonPressMask, &e)) {
+      if (e.xbutton.button == Button1) {
+        XUnmapWindow(dpy, e.xbutton.window);
+        return false;
+      }
+    }
   }
 
-  else if (notification->type == UNOT_TYPE_SPINNER) {
+  if (notification->timeout > 0 && elapsed >= notification->timeout * 1000) {
+    XUnmapWindow(dpy, notification->window);
+    return false;
+  }
+
+  if (notification->type == UNOT_TYPE_SPINNER) {
 
     elapsed = (now.tv_sec - notification->last_time.tv_sec) * 1000 +
               (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;
@@ -122,4 +136,6 @@ void notification_update(Display *dpy, Notification *notification) {
       notification->last_time = now;
     }
   }
+
+  return true;
 }

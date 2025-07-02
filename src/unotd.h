@@ -3,7 +3,6 @@
 
 #include "list.h"
 #include "notification.h"
-#include <semaphore.h>
 
 typedef struct _PollSet {
 
@@ -29,18 +28,13 @@ typedef struct _Unotd {
   NotificationList open;
   NotificationList wait;
 
-  pthread_cond_t notification_opened;
-  sem_t notification_count;
+  pthread_mutex_t nlist_lock;
+  pthread_cond_t nlist_empty;
+  pthread_cond_t notif_open;
 
 } Unotd;
 
-void unotd_handle_events(Unotd *unotd);
-void unotd_handle_unmap(Unotd *unotd, Window window);
-
-void unotd_update_visitor(Notification *prev, Notification *curr, void *data);
-void unotd_reposition_visitor(Notification *prev, Notification *curr,
-                              void *data);
-
+void unotd_update_notifications(Unotd *unotd);
 void unotd_init_notification_resources(Unotd *unotd, Notification *target);
 void unotd_free_notification_resources(Unotd *unotd, Notification *target);
 

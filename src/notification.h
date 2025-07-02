@@ -5,21 +5,20 @@
 
 #include <X11/Xft/Xft.h>
 #include <X11/Xlib.h>
+#include <stdbool.h>
 #include <time.h>
 
 typedef enum _NotificationType {
-
   UNOT_TYPE_MESSAGE,
   UNOT_TYPE_SPINNER
-
 } NotificationType;
 
-typedef enum _NotificationState {
-
-  UNOT_STATE_MAPPED,
-  UNOT_STATE_UNMAPPED
-
-} NotificationState;
+typedef enum _NotificationNeeds {
+  UNOT_NEED_INIT,
+  UNOT_NEED_REOPEN,
+  UNOT_NEED_REDRAW,
+  UNOT_NEED_UPDATE
+} NotificationNeeds;
 
 typedef struct _Notification {
 
@@ -39,7 +38,7 @@ typedef struct _Notification {
   XftColor *txt_color;
   u_int16_t txt_x, txt_y;
 
-  NotificationState state;
+  NotificationNeeds needs;
   NotificationType type;
   const char *frame;
   int timeout;
@@ -54,7 +53,9 @@ void notification_open(Display *dpy, Config *config,
 
 void notification_draw(Display *dpy, Notification *notification);
 
-void notification_update(Display *dpy, Notification *notification);
+void notification_move(Display *dpy, Notification *notification);
+
+bool notification_update(Display *dpy, Notification *notification);
 
 void notification_close(Display *dpy, Notification *notification);
 

@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <sys/socket.h>
 
+struct LOL {
+  unsigned long ret;
+  Window win;
+};
+
 int protocol_recv_command(int fd, char *buf, size_t len) {
 
   char *p = buf;
@@ -134,23 +139,26 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
 
   if (strncmp(cmd, "MSG", 3) == 0) {
 
-    node = malloc(sizeof(NotificationNode));
+    node = calloc(1, sizeof(NotificationNode));
     ASSERT(node && "protocol_handle_command: malloc failed");
     Notification *not = &node->notification;
-    not->window = 0;
-    not->txt_font = NULL;
-    not->txt_color = NULL;
-    not->ind_color = NULL;
     not->type = UNOT_TYPE_MESSAGE;
-    not->state = UNOT_STATE_UNMAPPED;
+    not->needs = UNOT_NEED_INIT;
     not->timeout = unotd->config.timeout;
 
     if (_parse_fields(&node->notification) != 0)
       goto ERROR;
 
-    notification_list_append(&unotd->open, node);
+    pthread_mutex_lock(&unotd->nlist_lock);
 
-    sem_post(&unotd->notification_count);
+    notification_list_append(&unotd->open, node);
+    pthread_cond_signal(&unotd->nlist_empty);
+
+    while (node->notification.window == 0) {
+      pthread_cond_wait(&unotd->notif_open, &unotd->nlist_lock);
+    }
+
+    pthread_mutex_unlock(&unotd->nlist_lock);
 
     snprintf(response, 32, "OK\n\n");
     goto OK;
@@ -161,26 +169,23 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     node = malloc(sizeof(NotificationNode));
     ASSERT(node && "protocol_handle_command: malloc failed");
     Notification *not = &node->notification;
-    not->window = 0;
-    not->txt_font = NULL;
-    not->txt_color = NULL;
-    not->ind_color = NULL;
     not->type = UNOT_TYPE_SPINNER;
-    not->state = UNOT_STATE_UNMAPPED;
+    not->needs = UNOT_NEED_INIT;
     not->timeout = unotd->config.timeout;
 
     if (_parse_fields(&node->notification) != 0)
       goto ERROR;
 
+    pthread_mutex_lock(&unotd->nlist_lock);
+
     notification_list_append(&unotd->open, node);
+    pthread_cond_signal(&unotd->nlist_empty);
 
-    sem_post(&unotd->notification_count);
-
-    pthread_mutex_lock(&unotd->open.lock);
     while (node->notification.window == 0) {
-      pthread_cond_wait(&unotd->notification_opened, &unotd->open.lock);
+      pthread_cond_wait(&unotd->notif_open, &unotd->nlist_lock);
     }
-    pthread_mutex_unlock(&unotd->open.lock);
+
+    pthread_mutex_unlock(&unotd->nlist_lock);
 
     snprintf(response, 32, "OK\nwid:%lu\n\n", node->notification.window);
     goto OK;
@@ -213,36 +218,31 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
       goto ERROR;
     }
 
-    NotificationNode *prev = NULL;
-    NotificationNode *target = notification_list_find(
-        &unotd->open, &prev, utils_match_window, (void *)(uintptr_t)wid);
+    pthread_mutex_lock(&unotd->nlist_lock);
 
-    pthread_mutex_lock(&unotd->open.lock);
+    NotificationNode *prev = NULL;
+    NotificationNode *target = notification_list_find(&unotd->wait, &prev, wid);
+
     if (target) {
-      utils_transform_notification(&target->notification, ret);
-      target->notification.state = UNOT_STATE_UNMAPPED; 
-      pthread_mutex_unlock(&unotd->open.lock);
+      target->notification.needs = UNOT_NEED_REOPEN;
+      notification_list_unlink(&unotd->wait, prev);
+      notification_list_append(&unotd->open, target);
+      pthread_cond_signal(&unotd->nlist_empty);
     }
 
     else {
-
-      pthread_mutex_unlock(&unotd->open.lock);
-      target = notification_list_find(&unotd->wait, &prev, utils_match_window,
-                                      (void *)(uintptr_t)wid);
-
-      if (target == NULL) {
+      target = notification_list_find(&unotd->open, &prev, wid);
+      if (!target) {
         fprintf(stderr, "error: unknown window id: %lu\n", wid);
+        pthread_mutex_unlock(&unotd->nlist_lock);
         goto ERROR;
       }
-
-      notification_list_unlink(&unotd->wait, prev);
-      utils_transform_notification(&target->notification, ret);
-      notification_list_append(&unotd->open, target);
-
-      sem_post(&unotd->notification_count);
+      target->notification.needs = UNOT_NEED_REDRAW;
     }
 
+    utils_transform_notification(&target->notification, ret);
     snprintf(response, 32, "OK\n\n");
+    pthread_mutex_unlock(&unotd->nlist_lock);
     goto OK;
   }
 

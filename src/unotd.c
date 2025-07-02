@@ -2,93 +2,76 @@
 #include "utils.h"
 #include <stdint.h>
 
-void unotd_handle_events(Unotd *unotd) {
+void unotd_update_notifications(Unotd *unotd) {
 
-  XEvent e;
-  while (XPending(unotd->display)) {
+  bool unmapped = false;
+  NotificationNode *prev = NULL;
+  NotificationNode *curr = unotd->open.head;
+  while (curr) {
 
-    XNextEvent(unotd->display, &e);
-    switch (e.type) {
+    Notification *nprev = prev ? &prev->notification : NULL;
+    Notification *ncurr = &curr->notification;
 
-    case Expose:
+    if (unmapped && ncurr->needs >= UNOT_NEED_REDRAW) {
+
+      utils_reposition_notification(unotd->display, &unotd->config, nprev,
+                                    ncurr);
+      notification_move(unotd->display, ncurr);
+    }
+
+    switch (ncurr->needs) {
+
+    case UNOT_NEED_INIT:
+      unotd_init_notification_resources(unotd, ncurr);
+      utils_calculate_notification_layout(unotd->display, &unotd->config,
+                                          ncurr);
+      utils_reposition_notification(unotd->display, &unotd->config, nprev,
+                                    ncurr);
+      notification_open(unotd->display, &unotd->config, ncurr);
+      pthread_cond_signal(&unotd->notif_open);
+      ncurr->needs = UNOT_NEED_UPDATE;
       break;
-    case ButtonPress:
-      if (e.xbutton.button == Button1) {
-        XUnmapWindow(unotd->display, e.xbutton.window);
-        XSync(unotd->display, False);
+
+    case UNOT_NEED_REOPEN:
+      utils_reposition_notification(unotd->display, &unotd->config, nprev,
+                                    ncurr);
+      notification_move(unotd->display, ncurr);
+      XMapWindow(unotd->display, ncurr->window);
+      notification_draw(unotd->display, ncurr);
+      ncurr->needs = UNOT_NEED_UPDATE;
+      break;
+
+    case UNOT_NEED_REDRAW:
+      notification_draw(unotd->display, ncurr);
+      ncurr->needs = UNOT_NEED_UPDATE;
+      break;
+
+    case UNOT_NEED_UPDATE:
+      if (notification_update(unotd->display, ncurr) == 0) {
+
+        unmapped = true;
+
+        switch (ncurr->type) {
+
+        case UNOT_TYPE_MESSAGE:
+          unotd_free_notification_resources(unotd, ncurr);
+          notification_close(unotd->display, ncurr);
+          notification_list_remove(&unotd->open, prev);
+          break;
+
+        case UNOT_TYPE_SPINNER:
+          notification_list_unlink(&unotd->open, prev);
+          notification_list_append(&unotd->wait, curr);
+          break;
+        }
+
+        curr = prev ? prev->next : unotd->open.head;
+        continue;
       }
-      break;
-    case UnmapNotify:
-      unotd_handle_unmap(unotd, e.xunmap.window);
-      break;
-    }
-  }
-}
-
-void unotd_handle_unmap(Unotd *unotd, Window window) {
-
-  NotificationNode *previous = NULL;
-  NotificationNode *unmapped = notification_list_find(
-      &unotd->open, &previous, utils_match_window, (void *)(uintptr_t)window);
-
-  ASSERT(unmapped && "unotd_handle_unmapped_notification: node not found");
-
-  switch (unmapped->notification.type) {
-
-  case UNOT_TYPE_MESSAGE:
-    unotd_free_notification_resources(unotd, &unmapped->notification);
-    notification_close(unotd->display, &unmapped->notification);
-    notification_list_remove(&unotd->open, previous);
-    break;
-
-  case UNOT_TYPE_SPINNER:
-    unmapped->notification.state = UNOT_STATE_UNMAPPED;
-    notification_list_unlink(&unotd->open, previous);
-    notification_list_append(&unotd->wait, unmapped);
-    break;
-  }
-
-  notification_list_foreach(&unotd->open, previous, unotd_reposition_visitor,
-                            unotd);
-
-  sem_wait(&unotd->notification_count);
-}
-
-void unotd_update_visitor(Notification *prev, Notification *curr, void *data) {
-
-  Unotd *unotd = (Unotd *)data;
-
-  if (curr->state == UNOT_STATE_UNMAPPED) {
-
-    if (curr->window == 0) {
-      unotd_init_notification_resources(unotd, curr);
-      utils_calculate_notification_layout(unotd->display, &unotd->config, curr);
-      utils_reposition_notification(unotd->display, &unotd->config, prev, curr);
-      notification_open(unotd->display, &unotd->config, curr);
-      pthread_cond_signal(&unotd->notification_opened);
     }
 
-    else {
-      utils_reposition_notification(unotd->display, &unotd->config, prev, curr);
-      XMoveWindow(unotd->display, curr->window, curr->win_x, curr->win_y);
-      XMapWindow(unotd->display, curr->window);
-      notification_draw(unotd->display, curr);
-      curr->state = UNOT_STATE_MAPPED;
-    }
-
-  } else {
-    notification_update(unotd->display, curr);
-  }
-}
-
-void unotd_reposition_visitor(Notification *prev, Notification *curr,
-                              void *data) {
-
-  Unotd *unotd = (Unotd *)data;
-
-  if (curr->state == UNOT_STATE_MAPPED) {
-    utils_reposition_notification(unotd->display, &unotd->config, prev, curr);
-    XMoveWindow(unotd->display, curr->window, curr->win_x, curr->win_y);
+    prev = curr;
+    curr = curr->next;
   }
 }
 

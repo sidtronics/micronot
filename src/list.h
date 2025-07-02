@@ -2,17 +2,14 @@
 #define UNOT_LIST_H
 
 #include "notification.h"
-#include <stdbool.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 typedef struct _NotificationNode NotificationNode;
 
 typedef struct _NotificationList {
-
   NotificationNode *head;
   NotificationNode *tail;
-  pthread_mutex_t lock;
-
 } NotificationList;
 
 struct _NotificationNode {
@@ -20,11 +17,6 @@ struct _NotificationNode {
   Notification notification;
   NotificationNode *next;
 };
-
-typedef void (*NotificationVisitor)(Notification *prev, Notification *curr,
-                                    void *data);
-
-typedef bool (*NotificationPredicate)(Notification *node, void *data);
 
 bool notification_list_is_empty(NotificationList *list);
 
@@ -36,12 +28,7 @@ NotificationNode *notification_list_unlink(NotificationList *list,
 
 void notification_list_remove(NotificationList *list, NotificationNode *prev);
 
-void notification_list_foreach(NotificationList *list, NotificationNode *prev,
-                               NotificationVisitor visit, void *data);
 
 NotificationNode *notification_list_find(NotificationList *list,
-                                         NotificationNode **prev,
-                                         NotificationPredicate match,
-                                         void *data);
-
+                                         NotificationNode **prev, Window id);
 #endif

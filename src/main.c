@@ -6,11 +6,12 @@
 
 Unotd unotd = {
 
-    .open = {.head = NULL, .tail = NULL, .lock = PTHREAD_MUTEX_INITIALIZER},
+    .open = {.head = NULL, .tail = NULL},
+    .wait = {.head = NULL, .tail = NULL},
 
-    .wait = {.head = NULL, .tail = NULL, .lock = PTHREAD_MUTEX_INITIALIZER},
-
-    .notification_opened = PTHREAD_COND_INITIALIZER,
+    .nlist_lock = PTHREAD_MUTEX_INITIALIZER,
+    .nlist_empty = PTHREAD_COND_INITIALIZER,
+    .notif_open = PTHREAD_COND_INITIALIZER,
 
     .config =
         {
@@ -92,7 +93,7 @@ int main() {
 
   server_init(&unotd);
 
-  sem_init(&unotd.notification_count, 0, 0);
+  // sem_init(&unotd.notification_count, 0, 0);
 
   pthread_t poll_thread;
   if (pthread_create(&poll_thread, NULL, poll_loop, &unotd) != 0) {
@@ -126,11 +127,21 @@ int main() {
   //    not->ind_color = (XftColor *)"0xffa500";
   //    not->txt_color = (XftColor *)"0xffa500";
 
-  sem_wait(&unotd.notification_count);
+  // sem_wait(&unotd.notification_count);
 
   while (1) {
-    unotd_handle_events(&unotd);
-    notification_list_foreach(&unotd.open, NULL, unotd_update_visitor, &unotd);
+    // unotd_handle_events(&unotd);
+    // notification_list_visit(&unotd.open, NULL, unotd_update_visitor, &unotd);
+
+    pthread_mutex_lock(&unotd.nlist_lock);
+
+    while (notification_list_is_empty(&unotd.open)) {
+      pthread_cond_wait(&unotd.nlist_empty, &unotd.nlist_lock);
+    }
+    unotd_update_notifications(&unotd);
+
+    pthread_mutex_unlock(&unotd.nlist_lock);
+
     XSync(unotd.display, False);
 
     struct timespec ts = {0, 50 * 1000 * 1000};
