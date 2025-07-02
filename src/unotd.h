@@ -1,7 +1,7 @@
 #ifndef UNOT_UNOTD_H
 #define UNOT_UNOTD_H
 
-#include "list.h"
+#include "nlist.h"
 #include "notification.h"
 
 typedef struct _PollSet {

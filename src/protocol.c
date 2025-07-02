@@ -151,7 +151,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
 
     pthread_mutex_lock(&unotd->nlist_lock);
 
-    notification_list_append(&unotd->open, node);
+    nlist_append(&unotd->open, node);
     pthread_cond_signal(&unotd->nlist_empty);
 
     while (node->notification.window == 0) {
@@ -178,7 +178,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
 
     pthread_mutex_lock(&unotd->nlist_lock);
 
-    notification_list_append(&unotd->open, node);
+    nlist_append(&unotd->open, node);
     pthread_cond_signal(&unotd->nlist_empty);
 
     while (node->notification.window == 0) {
@@ -221,17 +221,17 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     pthread_mutex_lock(&unotd->nlist_lock);
 
     NotificationNode *prev = NULL;
-    NotificationNode *target = notification_list_find(&unotd->wait, &prev, wid);
+    NotificationNode *target = nlist_find(&unotd->wait, &prev, wid);
 
     if (target) {
       target->notification.needs = UNOT_NEED_REOPEN;
-      notification_list_unlink(&unotd->wait, prev);
-      notification_list_append(&unotd->open, target);
+      nlist_unlink(&unotd->wait, prev);
+      nlist_append(&unotd->open, target);
       pthread_cond_signal(&unotd->nlist_empty);
     }
 
     else {
-      target = notification_list_find(&unotd->open, &prev, wid);
+      target = nlist_find(&unotd->open, &prev, wid);
       if (!target) {
         fprintf(stderr, "error: unknown window id: %lu\n", wid);
         pthread_mutex_unlock(&unotd->nlist_lock);

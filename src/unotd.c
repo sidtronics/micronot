@@ -56,12 +56,12 @@ void unotd_update_notifications(Unotd *unotd) {
         case UNOT_TYPE_MESSAGE:
           unotd_free_notification_resources(unotd, ncurr);
           notification_close(unotd->display, ncurr);
-          notification_list_remove(&unotd->open, prev);
+          nlist_remove(&unotd->open, prev);
           break;
 
         case UNOT_TYPE_SPINNER:
-          notification_list_unlink(&unotd->open, prev);
-          notification_list_append(&unotd->wait, curr);
+          nlist_unlink(&unotd->open, prev);
+          nlist_append(&unotd->wait, curr);
           break;
         }
 

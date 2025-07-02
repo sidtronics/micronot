@@ -7,7 +7,6 @@
 #include <stdbool.h>
 
 #include "config.h"
-#include "list.h"
 #include "notification.h"
 
 #if 1

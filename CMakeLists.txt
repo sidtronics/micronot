@@ -10,7 +10,7 @@ add_executable(
     src/main.c
     src/unotd.c
     src/utils.c
-    src/list.c
+    src/nlist.c
     src/notification.c
     src/server.c
     src/protocol.c

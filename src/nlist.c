@@ -1,15 +1,15 @@
-#include "list.h"
+#include "nlist.h"
 #include "utils.h"
 
-bool notification_list_is_empty(NotificationList *list) {
+bool nlist_empty(NotificationList *list) {
 
+  ASSERT(list && "nlist_empty: list is NULL");
   return list->head == NULL;
 }
 
-Notification *notification_list_append(NotificationList *list,
-                                       NotificationNode *node) {
+Notification *nlist_append(NotificationList *list, NotificationNode *node) {
 
-  ASSERT(list && "notification_list_append: list is NULL");
+  ASSERT(list && "nlist_append: list is NULL");
 
   NotificationNode *new_node = (node ? node : malloc(sizeof(NotificationNode)));
   new_node->next = NULL;
@@ -27,10 +27,9 @@ Notification *notification_list_append(NotificationList *list,
   return &new_node->notification;
 }
 
-NotificationNode *notification_list_unlink(NotificationList *list,
-                                           NotificationNode *prev) {
+NotificationNode *nlist_unlink(NotificationList *list, NotificationNode *prev) {
 
-  ASSERT(list && "notification_list_unlink_next: list is NULL");
+  ASSERT(list && "nlist_unlink: list is NULL");
 
   NotificationNode *target = NULL;
 
@@ -57,14 +56,16 @@ NotificationNode *notification_list_unlink(NotificationList *list,
   return target;
 }
 
-void notification_list_remove(NotificationList *list, NotificationNode *prev) {
+void nlist_remove(NotificationList *list, NotificationNode *prev) {
 
-  NotificationNode *target = notification_list_unlink(list, prev);
+  NotificationNode *target = nlist_unlink(list, prev);
   free(target);
 }
 
-NotificationNode *notification_list_find(NotificationList *list,
-                                         NotificationNode **prev, Window id) {
+NotificationNode *nlist_find(NotificationList *list, NotificationNode **prev,
+                             Window id) {
+
+  ASSERT("nlist_find: list is NULL");
 
   NotificationNode *previous = NULL;
   NotificationNode *current = list->head;

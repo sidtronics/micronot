@@ -47,7 +47,7 @@ static void allocate_color(Display *dpy, unsigned long color, XftColor *res) {
 static Notification *append_new_not(Unotd *unotd, NotificationType t,
                                     const char *m, char *i, int to) {
 
-  Notification *new_not = notification_list_append(&unotd->open, NULL);
+  Notification *new_not = nlist_append(&unotd->open, NULL);
   new_not->window = 0;
   new_not->frame = NULL;
   new_not->txt_font = NULL;
@@ -135,7 +135,7 @@ int main() {
 
     pthread_mutex_lock(&unotd.nlist_lock);
 
-    while (notification_list_is_empty(&unotd.open)) {
+    while (nlist_empty(&unotd.open)) {
       pthread_cond_wait(&unotd.nlist_empty, &unotd.nlist_lock);
     }
     unotd_update_notifications(&unotd);
