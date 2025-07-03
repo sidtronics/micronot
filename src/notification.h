@@ -13,12 +13,12 @@ typedef enum _NotificationType {
   UNOT_TYPE_SPINNER
 } NotificationType;
 
-typedef enum _NotificationNeeds {
+typedef enum _NotificationState {
   UNOT_NEED_INIT,
   UNOT_NEED_REOPEN,
   UNOT_NEED_REDRAW,
   UNOT_NEED_UPDATE
-} NotificationNeeds;
+} NotificationState;
 
 typedef struct _Notification {
 
@@ -38,7 +38,7 @@ typedef struct _Notification {
   XftColor *txt_color;
   u_int16_t txt_x, txt_y;
 
-  NotificationNeeds needs;
+  NotificationState state;
   NotificationType type;
   const char *frame;
   int timeout;

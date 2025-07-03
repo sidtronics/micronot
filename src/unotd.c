@@ -12,14 +12,14 @@ void unotd_update_notifications(Unotd *unotd) {
     Notification *nprev = prev ? &prev->notification : NULL;
     Notification *ncurr = &curr->notification;
 
-    if (unmapped && ncurr->needs >= UNOT_NEED_REDRAW) {
+    if (unmapped && ncurr->state >= UNOT_NEED_REDRAW) {
 
       utils_reposition_notification(unotd->display, &unotd->config, nprev,
                                     ncurr);
       notification_move(unotd->display, ncurr);
     }
 
-    switch (ncurr->needs) {
+    switch (ncurr->state) {
 
     case UNOT_NEED_INIT:
       unotd_init_notification_resources(unotd, ncurr);
@@ -29,7 +29,7 @@ void unotd_update_notifications(Unotd *unotd) {
                                     ncurr);
       notification_open(unotd->display, &unotd->config, ncurr);
       pthread_cond_signal(&unotd->notif_open);
-      ncurr->needs = UNOT_NEED_UPDATE;
+      ncurr->state = UNOT_NEED_UPDATE;
       break;
 
     case UNOT_NEED_REOPEN:
@@ -38,12 +38,12 @@ void unotd_update_notifications(Unotd *unotd) {
       notification_move(unotd->display, ncurr);
       notification_map(unotd->display, ncurr);
       notification_draw(unotd->display, ncurr);
-      ncurr->needs = UNOT_NEED_UPDATE;
+      ncurr->state = UNOT_NEED_UPDATE;
       break;
 
     case UNOT_NEED_REDRAW:
       notification_draw(unotd->display, ncurr);
-      ncurr->needs = UNOT_NEED_UPDATE;
+      ncurr->state = UNOT_NEED_UPDATE;
       break;
 
     case UNOT_NEED_UPDATE:

@@ -138,7 +138,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     ASSERT(node && "protocol_handle_command: malloc failed");
     Notification *not = &node->notification;
     not->type = UNOT_TYPE_MESSAGE;
-    not->needs = UNOT_NEED_INIT;
+    not->state = UNOT_NEED_INIT;
     not->timeout = unotd->config.timeout;
 
     if (_parse_fields(&node->notification) != 0)
@@ -165,7 +165,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     ASSERT(node && "protocol_handle_command: malloc failed");
     Notification *not = &node->notification;
     not->type = UNOT_TYPE_SPINNER;
-    not->needs = UNOT_NEED_INIT;
+    not->state = UNOT_NEED_INIT;
     not->timeout = unotd->config.timeout;
 
     if (_parse_fields(&node->notification) != 0)
@@ -219,7 +219,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     NotificationNode *target = nlist_find(&unotd->wait, &prev, wid);
 
     if (target) {
-      target->notification.needs = UNOT_NEED_REOPEN;
+      target->notification.state = UNOT_NEED_REOPEN;
       nlist_unlink(&unotd->wait, prev);
       nlist_append(&unotd->open, target);
       pthread_cond_signal(&unotd->nlist_empty);
@@ -232,7 +232,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
         pthread_mutex_unlock(&unotd->nlist_lock);
         goto ERROR;
       }
-      target->notification.needs = UNOT_NEED_REDRAW;
+      target->notification.state = UNOT_NEED_REDRAW;
     }
 
     utils_transform_notification(&target->notification, ret);
