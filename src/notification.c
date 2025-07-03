@@ -14,7 +14,7 @@ static Window _create_notification_window(Display *dpy, u_int16_t win_x,
   XSetWindowAttributes attrs;
   attrs.background_pixel = bg_color;
   attrs.border_pixel = bor_color;
-  attrs.event_mask = ExposureMask | ButtonPressMask | StructureNotifyMask;
+  attrs.event_mask = ButtonPressMask;
   attrs.override_redirect = 1;
 
   Window window = XCreateWindow(dpy, XRootWindowOfScreen(screen), win_x, win_y,
@@ -23,9 +23,7 @@ static Window _create_notification_window(Display *dpy, u_int16_t win_x,
 
   ASSERT(window && "_create_notification_window: failed to create window.");
 
-  XSelectInput(dpy, window,
-               ExposureMask | ButtonPressMask | StructureNotifyMask);
-  XMapWindow(dpy, window);
+  XSelectInput(dpy, window, ButtonPressMask);
 
   return window;
 }
@@ -84,7 +82,13 @@ void notification_open(Display *dpy, Config *config,
       XftDrawCreate(dpy, notification->window, DefaultVisual(dpy, scr_nbr),
                     DefaultColormap(dpy, scr_nbr));
 
+  notification_map(dpy, notification);
   notification_draw(dpy, notification);
+}
+
+void notification_map(Display *dpy, Notification *notification) {
+
+  XMapWindow(dpy, notification->window);
 }
 
 void notification_move(Display *dpy, Notification *notification) {

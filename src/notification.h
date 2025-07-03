@@ -51,6 +51,8 @@ typedef struct _Notification {
 void notification_open(Display *dpy, Config *config,
                        Notification *notification);
 
+void notification_map(Display *dpy, Notification *notification);
+
 void notification_draw(Display *dpy, Notification *notification);
 
 void notification_move(Display *dpy, Notification *notification);

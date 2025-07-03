@@ -36,7 +36,7 @@ void unotd_update_notifications(Unotd *unotd) {
       utils_reposition_notification(unotd->display, &unotd->config, nprev,
                                     ncurr);
       notification_move(unotd->display, ncurr);
-      XMapWindow(unotd->display, ncurr->window);
+      notification_map(unotd->display, ncurr);
       notification_draw(unotd->display, ncurr);
       ncurr->needs = UNOT_NEED_UPDATE;
       break;
