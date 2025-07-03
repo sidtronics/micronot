@@ -9,6 +9,4 @@
 void server_init(Unotd *unotd);
 void server_process_connections(Unotd *unotd);
 
-
-
 #endif

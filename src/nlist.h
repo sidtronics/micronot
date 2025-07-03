@@ -13,7 +13,6 @@ typedef struct _NotificationList {
 } NotificationList;
 
 struct _NotificationNode {
-
   Notification notification;
   NotificationNode *next;
 };
