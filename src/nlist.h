@@ -18,9 +18,13 @@ struct _NotificationNode {
 };
 
 bool nlist_empty(NotificationList *list);
+
 Notification *nlist_append(NotificationList *list, NotificationNode *node);
+
 NotificationNode *nlist_unlink(NotificationList *list, NotificationNode *prev);
+
 void nlist_remove(NotificationList *list, NotificationNode *prev);
+
 NotificationNode *nlist_find(NotificationList *list, NotificationNode **prev,
                              Window id);
 #endif

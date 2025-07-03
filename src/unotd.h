@@ -2,7 +2,6 @@
 #define UNOT_UNOTD_H
 
 #include "nlist.h"
-#include "notification.h"
 
 typedef struct _PollSet {
 
@@ -35,7 +34,5 @@ typedef struct _Unotd {
 } Unotd;
 
 void unotd_update_notifications(Unotd *unotd);
-void unotd_init_notification_resources(Unotd *unotd, Notification *target);
-void unotd_free_notification_resources(Unotd *unotd, Notification *target);
 
 #endif
