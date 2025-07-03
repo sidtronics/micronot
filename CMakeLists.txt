@@ -9,6 +9,7 @@ add_executable(
     unotd
     src/main.c
     src/unotd.c
+    src/config.c
     src/utils.c
     src/nlist.c
     src/notification.c

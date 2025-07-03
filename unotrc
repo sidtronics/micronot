@@ -1,0 +1,18 @@
+[global]
+
+    origin = top-right
+    x_padding = 2
+    y_padding = 2
+    x_offset = 5
+    y_offset = 10
+    spacing = 5
+    border_size = 2
+    gap_size = 7
+    indicator_size = 10.0
+    timeout = 10
+    bg_color = #0000FF
+    text_color = #FFFFFF
+    indicator_color = #FFFFFF
+    border_color = #FFFFFF
+
+# vim: ft=cfg

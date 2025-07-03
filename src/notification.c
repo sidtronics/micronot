@@ -73,7 +73,7 @@ void notification_open(Display *dpy, Config *config,
 
   notification->window = _create_notification_window(
       dpy, notification->win_x, notification->win_y, notification->win_w,
-      notification->win_h, config->border_size, config->background_color,
+      notification->win_h, config->border_size, config->bg_color,
       config->border_color);
 
   int scr_nbr = DefaultScreen(dpy);

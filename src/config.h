@@ -25,9 +25,12 @@ typedef struct _Config {
   u_int16_t gap_size;
   double indicator_size;
   unsigned long timeout;
-  unsigned long background_color;
-  unsigned long foreground_color;
+  unsigned long bg_color;
+  unsigned long text_color;
+  unsigned long indicator_color;
   unsigned long border_color;
 } Config;
+
+void config_load(Config *cfg, const char *filename);
 
 #endif
