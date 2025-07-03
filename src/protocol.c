@@ -38,7 +38,21 @@ int protocol_recv_command(int fd, char *buf, size_t len) {
   return 0;
 }
 
-static int _parse_fields(Notification *target) {
+static bool _parse_and_validate_ul(const char *ul_str, unsigned long *res,
+                                   int base) {
+
+  ASSERT(ul_str && "_parse_and_validate_ul: ul_str is NULL");
+  ASSERT(res && "_parse_and_validate_ul: res is NULL");
+
+  char *end;
+  *res = strtoul(ul_str, &end, base);
+  if (ul_str[0] == '-' || *end != '\0')
+    return 1;
+  else
+    return 0;
+}
+
+static bool _parse_fields(Notification *target) {
 
   const char *txt = NULL;
   const char *ind = NULL;
@@ -47,77 +61,116 @@ static int _parse_fields(Notification *target) {
 
     const char *field = strtok(NULL, ":");
 
-    if (strcmp(field, "\n") == 0)
+    if (strncmp(field, "\n", 1) == 0)
       break;
 
     const char *value = strtok(NULL, "\n");
     if (value == NULL) {
-      fprintf(stderr, "error: malformed field: \"%s\"\n", field);
+      fprintf(stderr, "error: malformed field\n");
       return 1;
     }
 
-    if (strcmp(field, "txt") == 0)
+    if (strncmp(field, "txt", 3) == 0)
       txt = value;
 
-    else if (strcmp(field, "ind") == 0)
+    else if (strncmp(field, "ind", 3) == 0)
       ind = value;
 
-    else if (strcmp(field, "nme") == 0) {
+    else if (strncmp(field, "nme", 3) == 0) {
       // TODO
     }
 
-    else if (strcmp(field, "tfn") == 0)
+    else if (strncmp(field, "tfn", 3) == 0)
       target->txt_font = (void *)value;
 
-    else if (strcmp(field, "tfg") == 0)
+    else if (strncmp(field, "tfg", 3) == 0)
       target->txt_color = (void *)value;
 
-    else if (strcmp(field, "ifg") == 0)
+    else if (strncmp(field, "ifg", 3) == 0)
       target->ind_color = (void *)value;
 
-    else if (strcmp(field, "tim") == 0) {
-
-      char *end;
-      unsigned long timeout_ul = strtoul(value, &end, 10);
-      if (value[0] == '-' || *end != '\0') {
+    else if (strncmp(field, "tim", 3) == 0) {
+      if (_parse_and_validate_ul(value, &target->timeout, 10) != 0) {
         fprintf(stderr, "error: invalid timeout\n");
         return 1;
       }
-
-      if (timeout_ul > INT_MAX) {
-        fprintf(stderr, "error: timeout out of range\n");
-        return 1;
-      }
-
-      target->timeout = (int)timeout_ul;
     }
 
     else {
-
       fprintf(stderr, "error: unknown field: \"%s\"\n", field);
       return 1;
     }
   }
 
   if (txt == NULL) {
-
-    fprintf(stderr, "error: text not found");
+    fprintf(stderr, "error: text not set");
     return 1;
   }
 
   if (ind == NULL) {
-
-    fprintf(stderr, "error: indicator not found");
+    fprintf(stderr, "error: indicator not set");
     return 1;
   }
 
   size_t txt_len = strlen(txt) + 1;
   size_t ind_len = strlen(ind) + 1;
-  size_t len = txt_len + ind_len;
-  target->text = malloc(len);
+  target->text = malloc(txt_len + ind_len);
   memcpy(target->text, txt, txt_len);
   target->indicator = target->text + txt_len;
   memcpy(target->indicator, ind, ind_len);
+  return 0;
+}
+
+static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
+
+  bool wid_set = false;
+  bool ret_set = false;
+
+  while (1) {
+
+    const char *field = strtok(NULL, ":");
+
+    if (strncmp(field, "\n", 1) == 0)
+      break;
+
+    const char *value = strtok(NULL, "\n");
+    if (value == NULL) {
+      fprintf(stderr, "error: malformed field\n");
+      return 1;
+    }
+
+    if (strncmp(field, "wid", 3) == 0) {
+      if (_parse_and_validate_ul(value, wid, 10) != 0) {
+        fprintf(stderr, "error: invalid window id\n");
+        return 1;
+      }
+      wid_set = true;
+    }
+
+    else if (strncmp(field, "ret", 3) == 0) {
+      if (_parse_and_validate_ul(value, ret, 10) != 0) {
+        fprintf(stderr, "error: invalid return value\n");
+        return 1;
+      }
+      ret_set = true;
+    }
+
+    else {
+      fprintf(stderr, "error: unknown field: \"%s\"\n", field);
+      return 1;
+    }
+  }
+
+  if (!wid_set) {
+    fprintf(stderr, "error: window id not set\n");
+    return 1;
+  }
+
+  if (!ret_set) {
+    fprintf(stderr, "error: window id not set\n");
+    return 1;
+  }
+
   return 0;
 }
 
@@ -128,7 +181,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
 
   const char *cmd = strtok(buf, "\n");
   if (cmd == NULL || strlen(cmd) < 3) {
-    fprintf(stderr, "error: invalid command\n");
+    fprintf(stderr, "error: invalid command: \"%s\"\n", cmd);
     goto ERROR;
   }
 
@@ -188,30 +241,10 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
 
   else if (strncmp(cmd, "RET", 3) == 0) {
 
-    const char *wid_str = strtok(NULL, "\n");
-    if (wid_str == NULL) {
-      fprintf(stderr, "error: window id not found\n");
+    unsigned long wid;
+    unsigned long ret;
+    if (_parse_ret_fields(&wid, &ret) != 0)
       goto ERROR;
-    }
-
-    const char *ret_str = strtok(NULL, "\n");
-    if (wid_str == NULL) {
-      fprintf(stderr, "error: return value not found\n");
-      goto ERROR;
-    }
-
-    char *end;
-    unsigned long wid = strtoul(wid_str, &end, 10);
-    if (*end != '\0') {
-      fprintf(stderr, "error: invalid window id: \"%s\"\n", wid_str);
-      goto ERROR;
-    }
-
-    unsigned long ret = strtoul(ret_str, &end, 10);
-    if (*end != '\0') {
-      fprintf(stderr, "error: invalid return value: \"%s\"\n", ret_str);
-      goto ERROR;
-    }
 
     pthread_mutex_lock(&unotd->nlist_lock);
 

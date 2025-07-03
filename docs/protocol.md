@@ -118,8 +118,8 @@ Close the spinner notification with window id <wid>. 0 indicates success. 1 indi
 
 ```
 RET
-wid
-0|1
+<wid:>
+<ret:>
 
 ```
 

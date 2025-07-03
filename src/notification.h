@@ -41,7 +41,7 @@ typedef struct _Notification {
   NotificationState state;
   NotificationType type;
   const char *frame;
-  int timeout;
+  unsigned long timeout;
 
   struct timespec start_time;
   struct timespec last_time;
