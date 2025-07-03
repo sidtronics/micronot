@@ -3,11 +3,6 @@
 #include <stdint.h>
 #include <sys/socket.h>
 
-struct LOL {
-  unsigned long ret;
-  Window win;
-};
-
 int protocol_recv_command(int fd, char *buf, size_t len) {
 
   char *p = buf;
@@ -71,16 +66,16 @@ static int _parse_fields(Notification *target) {
       // TODO
     }
 
-    else if (strcmp(field, "mfn") == 0)
-      target->txt_font = (void *)strdup(value);
+    else if (strcmp(field, "tfn") == 0)
+      target->txt_font = (void *)value;
 
-    else if (strcmp(field, "mfg") == 0)
-      target->txt_color = (void *)strdup(value);
+    else if (strcmp(field, "tfg") == 0)
+      target->txt_color = (void *)value;
 
     else if (strcmp(field, "ifg") == 0)
-      target->ind_color = (void *)strdup(value);
+      target->ind_color = (void *)value;
 
-    else if (strcmp(field, "tmo") == 0) {
+    else if (strcmp(field, "tim") == 0) {
 
       char *end;
       unsigned long timeout_ul = strtoul(value, &end, 10);
@@ -254,11 +249,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
 
 ERROR:
   if (node != NULL) {
-
     free((void *)node->notification.text);
-    free(node->notification.txt_font);
-    free(node->notification.txt_color);
-    free(node->notification.ind_color);
     free(node);
   }
   snprintf(response, 32, "ERROR\n\n");

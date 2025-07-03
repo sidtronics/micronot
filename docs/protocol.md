@@ -36,10 +36,10 @@ All messages consist of lines of UTF-8 text and are terminated by a blank line (
 | `txt` | Notification text |
 | `ind` | Indicator string |
 | `nme` | Name of spinner (from config) |
-| `mfn` | Message font (Fontconfig pattern string) |
+| `tfn` | Message font (Fontconfig pattern string) |
 | `ifg` | Icon foreground color (`RRGGBB` hex) |
-| `mfg` | Message foreground color (`RRGGBB` hex) |
-| `tmo` | Timeout in seconds (integer) | 
+| `tfg` | Message foreground color (`RRGGBB` hex) |
+| `tim` | Timeout in seconds (integer) | 
 
 ---
 
@@ -53,10 +53,10 @@ Open a notification with icon.
 MSG
 <txt>
 <ind>
-[mfn]
+[tfn]
 [ifg]
-[mfg]
-[tmo]
+[tfg]
+[tim]
 
 ```
 
@@ -86,10 +86,10 @@ Open a notification with spinner. Returns the window id of opened notification. 
 SPN
 <txt>
 <ind>|<nme> 
-[mfn]
+[tfn]
 [ifg]
-[mfg]
-[tmo]
+[tfg]
+[tim]
 
 ```
 

@@ -89,9 +89,6 @@ void unotd_init_notification_resources(Unotd *unotd, Notification *target) {
 
     ASSERT(target->txt_font &&
            "unotd_allocate_ext_resources: failed to assign txt_font");
-
-    free(font_name);
-
   } else {
     target->txt_font = unotd->txt_font;
   }
@@ -101,9 +98,6 @@ void unotd_init_notification_resources(Unotd *unotd, Notification *target) {
     char *txt_color_str = (void *)target->txt_color;
     target->txt_color =
         utils_allocate_custom_color(unotd->display, txt_color_str);
-
-    free(txt_color_str);
-
   } else {
     target->txt_color = &unotd->txt_color;
   }
@@ -113,9 +107,6 @@ void unotd_init_notification_resources(Unotd *unotd, Notification *target) {
     char *ind_color_str = (void *)target->ind_color;
     target->ind_color =
         utils_allocate_custom_color(unotd->display, ind_color_str);
-
-    free(ind_color_str);
-
   } else {
     target->ind_color = &unotd->ind_color;
   }
