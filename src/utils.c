@@ -1,9 +1,73 @@
 #include "utils.h"
+#include <ctype.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+
+bool utils_parse_ul(const char *str, unsigned long *res, int base) {
+
+  if (!str || !res)
+    return false;
+
+  char *endptr = NULL;
+  errno = 0;
+
+  unsigned long val = strtoul(str, &endptr, base);
+
+  if (errno == ERANGE || endptr == str)
+    return false;
+
+  while (isspace((unsigned char)*endptr))
+    endptr++;
+
+  if (*endptr != '\0')
+    return false;
+
+  *res = val;
+  return true;
+}
+
+bool utils_parse_u16(const char *str, uint16_t *res, int base) {
+
+  if (!str || !res)
+    return false;
+
+  unsigned long val;
+  if (!utils_parse_ul(str, &val, base))
+    return false;
+
+  if (val > UINT16_MAX)
+    return false;
+
+  *res = (uint16_t)val;
+  return true;
+}
+
+bool utils_parse_dbl(const char *str, double *res) {
+
+  if (!str || !res)
+    return false;
+
+  char *endptr = NULL;
+  errno = 0;
+
+  double val = strtod(str, &endptr);
+
+  if (endptr == str || errno == ERANGE)
+    return false;
+
+  while (isspace((unsigned char)*endptr))
+    endptr++;
+
+  if (*endptr != '\0')
+    return false;
+
+  *res = val;
+  return true;
+}
 
 static const char *_prepare_hints(const char *hints, double size, char *buf,
                                   size_t len) {

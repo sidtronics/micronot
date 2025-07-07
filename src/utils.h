@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <fontconfig/fontconfig.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "config.h"
 #include "notification.h"
@@ -16,6 +17,10 @@
 #endif
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+bool utils_parse_ul(const char *str, unsigned long *res, int base);
+bool utils_parse_u16(const char *str, uint16_t *res, int base);
+bool utils_parse_dbl(const char *str, double *res);
 
 void utils_resolve_indicator_font(Display *dpy, double size,
                                   Notification *target);

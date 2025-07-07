@@ -38,20 +38,6 @@ int protocol_recv_command(int fd, char *buf, size_t len) {
   return 0;
 }
 
-static bool _parse_and_validate_ul(const char *ul_str, unsigned long *res,
-                                   int base) {
-
-  ASSERT(ul_str && "_parse_and_validate_ul: ul_str is NULL");
-  ASSERT(res && "_parse_and_validate_ul: res is NULL");
-
-  char *end;
-  *res = strtoul(ul_str, &end, base);
-  if (ul_str[0] == '-' || *end != '\0')
-    return 1;
-  else
-    return 0;
-}
-
 static bool _parse_fields(Notification *target) {
 
   const char *txt = NULL;
@@ -90,7 +76,7 @@ static bool _parse_fields(Notification *target) {
       target->ind_color = (void *)value;
 
     else if (strncmp(field, "tim", 3) == 0) {
-      if (_parse_and_validate_ul(value, &target->timeout, 10) != 0) {
+      if (!utils_parse_ul(value, &target->timeout, 10)) {
         fprintf(stderr, "error: invalid timeout\n");
         return 1;
       }
@@ -140,7 +126,7 @@ static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
     }
 
     if (strncmp(field, "wid", 3) == 0) {
-      if (_parse_and_validate_ul(value, wid, 10) != 0) {
+      if (!utils_parse_ul(value, wid, 10)) {
         fprintf(stderr, "error: invalid window id\n");
         return 1;
       }
@@ -148,7 +134,7 @@ static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
     }
 
     else if (strncmp(field, "ret", 3) == 0) {
-      if (_parse_and_validate_ul(value, ret, 10) != 0) {
+      if (!utils_parse_ul(value, ret, 10)) {
         fprintf(stderr, "error: invalid return value\n");
         return 1;
       }
