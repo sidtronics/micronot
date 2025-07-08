@@ -89,12 +89,12 @@ static bool _parse_fields(Notification *target) {
   }
 
   if (txt == NULL) {
-    fprintf(stderr, "error: text not set");
+    fprintf(stderr, "error: text not set\n");
     return 1;
   }
 
   if (ind == NULL) {
-    fprintf(stderr, "error: indicator not set");
+    fprintf(stderr, "error: indicator not set\n");
     return 1;
   }
 
@@ -109,8 +109,8 @@ static bool _parse_fields(Notification *target) {
 
 static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
 
-  bool wid_set = false;
-  bool ret_set = false;
+  bool got_wid = false;
+  bool got_ret = false;
 
   while (1) {
 
@@ -130,7 +130,7 @@ static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
         fprintf(stderr, "error: invalid window id\n");
         return 1;
       }
-      wid_set = true;
+      got_wid = true;
     }
 
     else if (strncmp(field, "ret", 3) == 0) {
@@ -138,7 +138,7 @@ static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
         fprintf(stderr, "error: invalid return value\n");
         return 1;
       }
-      ret_set = true;
+      got_ret = true;
     }
 
     else {
@@ -147,13 +147,13 @@ static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
     }
   }
 
-  if (!wid_set) {
+  if (!got_wid) {
     fprintf(stderr, "error: window id not set\n");
     return 1;
   }
 
-  if (!ret_set) {
-    fprintf(stderr, "error: window id not set\n");
+  if (!got_ret) {
+    fprintf(stderr, "error: return value not set\n");
     return 1;
   }
 
