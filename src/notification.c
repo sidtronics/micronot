@@ -130,7 +130,7 @@ bool notification_update(Display *dpy, Notification *notification) {
     elapsed = (now.tv_sec - notification->last_time.tv_sec) * 1000 +
               (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;
 
-    if (elapsed >= 200) {
+    if (elapsed >= 150) {
 
       XClearArea(dpy, notification->window, 0, 0, notification->txt_x, 0,
                  False);
