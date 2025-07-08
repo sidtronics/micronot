@@ -1,6 +1,6 @@
 [global]
 
-origin = bottom-right
+origin = "bottom-right"
 x_padding = 2
 y_padding = 2
 x_offset = 5
@@ -10,7 +10,7 @@ border_size = 2
 gap_size = 7
 indicator_size = 10.0
 timeout = 10
-font = FiraCodeNerdFontPropo:style=Bold:size=8
+font = "FiraCodeNerdFontPropo:style=Bold:size=8"
 bg_color = "#000000"
 text_color = "#00FF00"
 indicator_color = "#FFFFFF"

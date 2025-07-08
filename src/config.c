@@ -39,18 +39,16 @@ static void _parse_field_dbl(const char *key, const char *val, double *res) {
 
 static void _parse_color(const char *key, char *str, unsigned long *res) {
 
-  // color string: "#RRGGBB"
+  // color string: #RRGGBB
 
-  if (!(strlen(str) == 9 && strncmp(str, "\"#", 2) == 0 && str[8] == '"')) {
+  if (!(strlen(str) == 7 && *str == '#')) {
     fprintf(stderr, "error: invalid color string '%s' for key '%s'\n", str,
             key);
     return;
   }
 
-  str[8] = 0;
-
-  if (!utils_parse_ul(str + 2, res, 16))
-    fprintf(stderr, "error: invalid color '%s' for key '%s'\n", str + 2, key);
+  if (!utils_parse_ul(str + 1, res, 16))
+    fprintf(stderr, "error: invalid color '%s' for key '%s'\n", str + 1, key);
 }
 
 static void _parse_origin(const char *origin_str, Origin *res) {
@@ -122,7 +120,26 @@ void config_load(Config *cfg, const char *filename) {
 
     *eq = 0;
     char *key = _trim(start);
+    if (!*key) {
+      fprintf(stderr, "error: missing key\n");
+      continue;
+    }
+
     char *value = _trim(eq + 1);
+    if (!*value) {
+      fprintf(stderr, "error: missing value\n");
+      continue;
+    }
+
+    if (*value == '"') {
+      value = value + 1;
+      char *end = strchr(value, '"');
+      if (!end) {
+        fprintf(stderr, "error: missing quote\n");
+        continue;
+      }
+      *end = 0;
+    }
 
     switch (section) {
 
