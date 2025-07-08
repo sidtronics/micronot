@@ -10,9 +10,9 @@
     gap_size = 7
     indicator_size = 10.0
     timeout = 10
-    bg_color = #0000FF
-    text_color = #FFFFFF
-    indicator_color = #FFFFFF
-    border_color = #FFFFFF
+    bg_color = "#0000FF"
+    text_color = "#FFFFFF"
+    indicator_color = "#FFFFFF"
+    border_color = "#FFFFFF"
 
 # vim: ft=cfg

@@ -36,13 +36,20 @@ static void _parse_field_dbl(const char *key, const char *val, double *res) {
     fprintf(stderr, "error: invalid value '%s' for key '%s'\n", val, key);
 }
 
-static void _parse_color(const char *key, const char *hex, unsigned long *res) {
+static void _parse_color(const char *key, char *str, unsigned long *res) {
 
-  if (hex[0] == '#')
-    hex++;
+  // color string: "#RRGGBB"
 
-  if (!utils_parse_ul(hex, res, 16))
-    fprintf(stderr, "error: invalid value '%s' for key '%s'\n", hex, key);
+  if (!(strlen(str) == 9 && strncmp(str, "\"#", 2) == 0 && str[8] == '"')) {
+    fprintf(stderr, "error: invalid color string '%s' for key '%s'\n", str,
+            key);
+    return;
+  }
+
+  str[8] = 0;
+
+  if (!utils_parse_ul(str + 2, res, 16))
+    fprintf(stderr, "error: invalid color '%s' for key '%s'\n", str + 2, key);
 }
 
 static void _parse_origin(const char *origin_str, Origin *res) {
