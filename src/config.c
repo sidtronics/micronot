@@ -109,6 +109,8 @@ void config_load(Config *cfg, const char *filename) {
       _parse_color(key, value, &cfg->indicator_color);
     else if (strcmp(key, "border_color") == 0)
       _parse_color(key, value, &cfg->border_color);
+    else
+      fprintf(stderr, "error: unknown field: '%s'\n", key);
   }
 
   fclose(f);
