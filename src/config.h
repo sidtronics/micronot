@@ -29,6 +29,12 @@ typedef struct _Config {
   unsigned long text_color;
   unsigned long indicator_color;
   unsigned long border_color;
+
+  struct {
+    char** indicators;
+    size_t indicators_count;
+  };
+
 } Config;
 
 void config_load(Config *cfg, const char *filename);
