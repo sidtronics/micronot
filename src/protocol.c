@@ -200,7 +200,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
 
   else if (strncmp(cmd, "SPN", 3) == 0) {
 
-    node = malloc(sizeof(NotificationNode));
+    node = calloc(1, sizeof(NotificationNode));
     ASSERT(node && "protocol_handle_command: malloc failed");
     Notification *not = &node->notification;
     not->type = UNOT_TYPE_SPINNER;
