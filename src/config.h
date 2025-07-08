@@ -24,6 +24,7 @@ typedef struct _Config {
   u_int16_t border_size;
   u_int16_t gap_size;
   double indicator_size;
+  const char* font;
   unsigned long timeout;
   unsigned long bg_color;
   unsigned long text_color;

@@ -33,10 +33,11 @@ int main() {
 
   setlocale(LC_ALL, "en_US.utf8");
   unotd.display = XOpenDisplay(NULL);
-  unotd.txt_font = XftFontOpenName(unotd.display, DefaultScreen(unotd.display),
-                                   "FiraCodeNerdFontPropo:style=Bold:size=8");
 
   config_load(&unotd.config, "../unotrc");
+
+  unotd.txt_font = XftFontOpenName(unotd.display, DefaultScreen(unotd.display),
+                                   unotd.config.font);
 
   utils_allocate_color(unotd.display, unotd.config.text_color,
                        &unotd.txt_color);

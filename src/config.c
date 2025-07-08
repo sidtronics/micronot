@@ -146,6 +146,8 @@ void config_load(Config *cfg, const char *filename) {
         _parse_field_u16(key, value, &cfg->gap_size);
       else if (strcmp(key, "indicator_size") == 0)
         _parse_field_dbl(key, value, &cfg->indicator_size);
+      else if (strcmp(key, "font") == 0)
+        cfg->font = strdup(value);
       else if (strcmp(key, "timeout") == 0)
         _parse_field_ul(key, value, &cfg->timeout);
       else if (strcmp(key, "bg_color") == 0)
@@ -194,9 +196,6 @@ void config_load(Config *cfg, const char *filename) {
   if (cfg->indicators_count != 0)
     cfg->indicators =
         realloc(cfg->indicators, cfg->indicators_count * sizeof(char *));
-
-  // printf("indicators count: %zu", cfg->indicators_count);
-  // fflush(stdout);
 
   fclose(f);
 }
