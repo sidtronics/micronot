@@ -1,5 +1,4 @@
 #include "utils.h"
-#include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -9,21 +8,15 @@
 
 bool utils_parse_ul(const char *str, unsigned long *res, int base) {
 
-  if (!str || !res)
-    return false;
+  ASSERT(str && *str && "utils_parse_ul: str is NULL or empty");
+  ASSERT(res && "utils_parse_ul: res is NULL");
 
   char *endptr = NULL;
   errno = 0;
 
   unsigned long val = strtoul(str, &endptr, base);
 
-  if (errno == ERANGE || endptr == str)
-    return false;
-
-  while (isspace((unsigned char)*endptr))
-    endptr++;
-
-  if (*endptr != '\0')
+  if (errno == ERANGE || *endptr != '\0')
     return false;
 
   *res = val;
@@ -32,8 +25,7 @@ bool utils_parse_ul(const char *str, unsigned long *res, int base) {
 
 bool utils_parse_u16(const char *str, uint16_t *res, int base) {
 
-  if (!str || !res)
-    return false;
+  ASSERT(res && "utils_parse_u16: res is NULL");
 
   unsigned long val;
   if (!utils_parse_ul(str, &val, base))
@@ -48,21 +40,15 @@ bool utils_parse_u16(const char *str, uint16_t *res, int base) {
 
 bool utils_parse_dbl(const char *str, double *res) {
 
-  if (!str || !res)
-    return false;
+  ASSERT(str && *str && "utils_parse_ul: str is NULL or empty");
+  ASSERT(res && "utils_parse_ul: res is NULL");
 
   char *endptr = NULL;
   errno = 0;
 
   double val = strtod(str, &endptr);
 
-  if (endptr == str || errno == ERANGE)
-    return false;
-
-  while (isspace((unsigned char)*endptr))
-    endptr++;
-
-  if (*endptr != '\0')
+  if (errno == ERANGE || *endptr != '\0')
     return false;
 
   *res = val;
