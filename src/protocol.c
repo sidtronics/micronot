@@ -38,7 +38,7 @@ int protocol_recv_command(int fd, char *buf, size_t len) {
   return 0;
 }
 
-static bool _parse_fields(Notification *target) {
+static bool _parse_fields(Unotd *unotd, Notification *target) {
 
   const char *txt = NULL;
   const char *ind = NULL;
@@ -63,7 +63,13 @@ static bool _parse_fields(Notification *target) {
       ind = value;
 
     else if (strncmp(field, "nme", 3) == 0) {
-      // TODO
+      for (size_t i = 0; i < unotd->config.indicators_count; i++) {
+        char *indicator = unotd->config.indicators[i];
+        if (strncmp(value, indicator, strlen(value)) == 0) {
+          target->indicator = indicator + strlen(indicator) + 1;
+          break;
+        }
+      }
     }
 
     else if (strncmp(field, "tfn", 3) == 0)
@@ -93,17 +99,23 @@ static bool _parse_fields(Notification *target) {
     return 1;
   }
 
-  if (ind == NULL) {
+  if (ind == NULL && target->indicator == NULL) {
     fprintf(stderr, "error: indicator not set\n");
     return 1;
   }
 
-  size_t txt_len = strlen(txt) + 1;
-  size_t ind_len = strlen(ind) + 1;
-  target->text = malloc(txt_len + ind_len);
-  memcpy(target->text, txt, txt_len);
-  target->indicator = target->text + txt_len;
-  memcpy(target->indicator, ind, ind_len);
+  if (target->indicator)
+    target->text = strdup(txt);
+
+  else {
+    size_t txt_len = strlen(txt) + 1;
+    size_t ind_len = strlen(ind) + 1;
+    target->text = malloc(txt_len + ind_len);
+    memcpy(target->text, txt, txt_len);
+    target->indicator = target->text + txt_len;
+    memcpy(target->indicator, ind, ind_len);
+  }
+
   return 0;
 }
 
@@ -180,7 +192,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     not->state = UNOT_NEED_INIT;
     not->timeout = unotd->config.timeout;
 
-    if (_parse_fields(&node->notification) != 0)
+    if (_parse_fields(unotd, &node->notification) != 0)
       goto ERROR;
 
     pthread_mutex_lock(&unotd->nlist_lock);
@@ -207,7 +219,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     not->state = UNOT_NEED_INIT;
     not->timeout = unotd->config.timeout;
 
-    if (_parse_fields(&node->notification) != 0)
+    if (_parse_fields(unotd, &node->notification) != 0)
       goto ERROR;
 
     pthread_mutex_lock(&unotd->nlist_lock);
