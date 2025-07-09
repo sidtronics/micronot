@@ -123,7 +123,7 @@ void utils_resolve_indicator_font(Display *dpy, double size,
   FcPatternDestroy(pattern);
 }
 
-void utils_allocate_color(Display *dpy, unsigned long color, XftColor *res) {
+XftColor* utils_allocate_color(Display *dpy, unsigned long color, XftColor *res) {
 
   XRenderColor xrcolor = {.red = ((color >> 16) & 0xff) * 257,
                           .green = ((color >> 8) & 0xff) * 257,
@@ -137,15 +137,18 @@ void utils_allocate_color(Display *dpy, unsigned long color, XftColor *res) {
 
   XftColorAllocValue(dpy, DefaultVisual(dpy, scr_nbr),
                      DefaultColormap(dpy, scr_nbr), &xrcolor, res);
+
+  return res;
 }
 
-void utils_allocate_color_s(Display *dpy, const char *color_str,
-                            XftColor *res) {
+XftColor *utils_allocate_color_s(Display *dpy, const char *color_str,
+                                 XftColor *res) {
 
   unsigned long color;
   ASSERT(utils_parse_ul(color_str, &color, 16) &&
          "utils_allocate_color: error parsing color string");
-  utils_allocate_color(dpy, color, res);
+
+  return utils_allocate_color(dpy, color, res);
 }
 
 void utils_calculate_notification_layout(Display *dpy, Config *config,

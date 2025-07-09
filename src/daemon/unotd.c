@@ -23,7 +23,8 @@ static void _init_notification_resources(Unotd *unotd, Notification *target) {
   if (target->txt_color) {
 
     char *txt_color_str = (void *)target->txt_color;
-    utils_allocate_color_s(unotd->display, txt_color_str, target->txt_color);
+    target->txt_color =
+        utils_allocate_color_s(unotd->display, txt_color_str, NULL);
   } else {
     target->txt_color = &unotd->txt_color;
   }
@@ -31,7 +32,8 @@ static void _init_notification_resources(Unotd *unotd, Notification *target) {
   if (target->ind_color) {
 
     char *ind_color_str = (void *)target->ind_color;
-    utils_allocate_color_s(unotd->display, ind_color_str, target->ind_color);
+    target->ind_color =
+        utils_allocate_color_s(unotd->display, ind_color_str, NULL);
   } else {
     target->ind_color = &unotd->ind_color;
   }

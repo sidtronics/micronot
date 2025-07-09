@@ -25,8 +25,8 @@ bool utils_parse_dbl(const char *str, double *res);
 void utils_resolve_indicator_font(Display *dpy, double size,
                                   Notification *target);
 
-void utils_allocate_color(Display *dpy, unsigned long color, XftColor *res);
-void utils_allocate_color_s(Display *dpy, const char *color_str, XftColor *res);
+XftColor* utils_allocate_color(Display *dpy, unsigned long color, XftColor *res);
+XftColor* utils_allocate_color_s(Display *dpy, const char *color_str, XftColor *res);
 
 void utils_calculate_notification_layout(Display *dpy, Config *config,
                                          Notification *target);
