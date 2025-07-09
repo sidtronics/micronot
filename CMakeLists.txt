@@ -7,14 +7,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 add_executable(
     unotd
-    src/main.c
-    src/unotd.c
-    src/config.c
-    src/utils.c
-    src/nlist.c
-    src/notification.c
-    src/server.c
-    src/protocol.c
+    src/daemon/main.c
+    src/daemon/unotd.c
+    src/daemon/config.c
+    src/daemon/utils.c
+    src/daemon/nlist.c
+    src/daemon/notification.c
+    src/daemon/server.c
+    src/daemon/protocol.c
+)
+
+add_library(unotclient SHARED src/client/client.c)
+target_include_directories(unotclient
+    PUBLIC ${PROJECT_SOURCE_DIR}/include/
 )
 
 include_directories (/usr/include/freetype2)
