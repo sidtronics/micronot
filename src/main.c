@@ -27,6 +27,22 @@ void *handle_server(void *arg) {
 int main() {
 
   Unotd unotd = {0};
+
+  // Default config:
+  unotd = (Unotd){.config = {.origin = UNOT_ORIGIN_BOTTOM_RIGHT,
+                             .x_padding = 2,
+                             .y_padding = 2,
+                             .spacing = 2,
+                             .border_size = 2,
+                             .gap_size = 5,
+                             .indicator_size = 10.0,
+                             .timeout = 5,
+                             .font = "monospace:size=9",
+                             .bg_color = 0x000000,
+                             .text_color = 0xFFFFFF,
+                             .indicator_color = 0xFFFFFF,
+                             .border_color = 0xFFFFFF}};
+
   pthread_mutex_init(&unotd.nlist_lock, NULL);
   pthread_cond_init(&unotd.nlist_empty, NULL);
   pthread_cond_init(&unotd.notif_open, NULL);
@@ -53,7 +69,6 @@ int main() {
   }
 
   while (1) {
-
     pthread_mutex_lock(&unotd.nlist_lock);
     while (nlist_empty(&unotd.open)) {
       pthread_cond_wait(&unotd.nlist_empty, &unotd.nlist_lock);
@@ -62,7 +77,6 @@ int main() {
     pthread_mutex_unlock(&unotd.nlist_lock);
 
     XSync(unotd.display, False);
-
     nanosleep(&(struct timespec){0, 50 * 1000 * 1000}, NULL);
   }
 }
