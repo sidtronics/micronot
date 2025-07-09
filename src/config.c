@@ -85,9 +85,11 @@ void config_load(Config *cfg, const char *filename) {
   }
 
   ConfigSection section = CONFIG_SECTION_NONE;
+  int line_num = 0;
   char line[256] = {0};
   while (fgets(line, sizeof(line), f)) {
 
+    line_num++;
     char *start = _trim(line);
     if (*start == '\0' || *start == '#')
       continue;
@@ -95,7 +97,8 @@ void config_load(Config *cfg, const char *filename) {
     if (*start == '[') {
       char *end = strchr(start + 1, ']');
       if (!end) {
-        fprintf(stderr, "error: missing ']' in config file\n");
+        fprintf(stderr, "error: missing ']' in config file at line no: %d\n",
+                line_num);
         continue;
       }
 
@@ -106,7 +109,8 @@ void config_load(Config *cfg, const char *filename) {
       else if (strncmp(start + 1, "indicators", strlen("indicators")) == 0)
         section = CONFIG_SECTION_INDICATORS;
       else {
-        fprintf(stderr, "error: unknown section '%s'\n", start + 1);
+        fprintf(stderr, "error: unknown section '%s' at line no: %d\n",
+                start + 1, line_num);
         section = CONFIG_SECTION_UNKNOWN;
       }
       continue;
@@ -114,7 +118,7 @@ void config_load(Config *cfg, const char *filename) {
 
     char *eq = strchr(start, '=');
     if (!eq) {
-      fprintf(stderr, "error: missing '='\n");
+      fprintf(stderr, "error: missing '=' at line no: %d\n", line_num);
       continue;
     }
 
@@ -127,7 +131,7 @@ void config_load(Config *cfg, const char *filename) {
 
     char *value = _trim(eq + 1);
     if (!*value) {
-      fprintf(stderr, "error: missing value\n");
+      fprintf(stderr, "error: missing value at line no: %d\n", line_num);
       continue;
     }
 
@@ -135,7 +139,7 @@ void config_load(Config *cfg, const char *filename) {
       value = value + 1;
       char *end = strchr(value, '"');
       if (!end) {
-        fprintf(stderr, "error: missing quote\n");
+        fprintf(stderr, "error: missing quote at line no: %d\n", line_num);
         continue;
       }
       *end = 0;
@@ -176,7 +180,8 @@ void config_load(Config *cfg, const char *filename) {
       else if (strcmp(key, "border_color") == 0)
         _parse_color(key, value, &cfg->border_color);
       else
-        fprintf(stderr, "error: unknown field: '%s'\n", key);
+        fprintf(stderr, "error: unknown field: '%s' at line no: %d\n", key,
+                line_num);
       break;
 
     case CONFIG_SECTION_INDICATORS:
@@ -202,7 +207,7 @@ void config_load(Config *cfg, const char *filename) {
       break;
 
     case CONFIG_SECTION_NONE:
-      fprintf(stderr, "error: entry without any section\n");
+      fprintf(stderr, "error: entry without any section at line no: %d\n", line_num);
       break;
 
     case CONFIG_SECTION_UNKNOWN:
