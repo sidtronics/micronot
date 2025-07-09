@@ -27,11 +27,11 @@ int unot_get_connection(const char *sock_path) {
   return sockfd;
 }
 
-static bool _send_buffer(int conn, const char *cmdbuf, size_t size) {
+static bool _send_buffer(int conn, const char *buf, size_t len) {
 
   size_t sent = 0;
-  while (sent < size) {
-    ssize_t n = send(conn, cmdbuf + sent, size - sent, 0);
+  while (sent < len) {
+    ssize_t n = send(conn, buf + sent, len - sent, 0);
     if (n < 0) {
       if (errno == EINTR)
         continue;
@@ -48,44 +48,91 @@ static bool _send_buffer(int conn, const char *cmdbuf, size_t size) {
   return true;
 }
 
-bool unot_notify_message(int conn, const char *text, const char *ind_str,
-                         const char *txt_font, unsigned long timeout,
-                         unsigned long ind_fg_color,
-                         unsigned long txt_fg_color) {
+static bool _recv_buffer(int conn, char *buf, size_t len) {
 
-  if (!(text && ind_str))
+  char *p = buf;
+  size_t bytes_read = 0;
+  do {
+
+    if (bytes_read >= 255) {
+
+      fprintf(stderr, "error: buffer overflow\n");
+      send(conn, "ERROR\n\n", 7, 0);
+      return false;
+    }
+
+    ssize_t n = recv(conn, buf + bytes_read, len - bytes_read - 1, 0);
+
+    if (n <= 0) {
+
+      if (n < 0) {
+        perror("recv");
+      }
+
+      fprintf(stderr, "info: client closed the connection\n");
+      return false;
+    }
+
+    if (bytes_read != 0)
+      p = buf + bytes_read - 1;
+
+    bytes_read += n;
+
+  } while (strstr(p, "\n\n") == NULL);
+
+  return true;
+}
+
+bool unot_notify_message(int conn, const char *text, u_int16_t mask,
+                         NotificationAttributes *attrs) {
+
+  if (!text || (!attrs->indicator && !attrs->indicator_name))
     return false;
 
   size_t size = 256;
-  char cmdbuf[size];
+  char buf[size];
   size_t offset = 0;
 
-  offset += snprintf(cmdbuf + offset, size - offset, "MSG\n");
-  offset += snprintf(cmdbuf + offset, size - offset, "txt:%s\n", text);
-  offset += snprintf(cmdbuf + offset, size - offset, "ind:%s\n", ind_str);
+  offset += snprintf(buf + offset, size - offset, "MSG\n");
+  offset += snprintf(buf + offset, size - offset, "txt:%s\n", text);
 
-  if (txt_font) {
-    offset += snprintf(cmdbuf + offset, size - offset, "tfn:%s\n", txt_font);
-  }
-
-  if (timeout) {
-    offset += snprintf(cmdbuf + offset, size - offset, "tim:%lu\n", timeout);
-  }
-
-  if (ind_fg_color) {
+  if (mask & UNIndicator)
     offset +=
-        snprintf(cmdbuf + offset, size - offset, "ifg:%lx\n", ind_fg_color);
-  }
+        snprintf(buf + offset, size - offset, "ind:%s\n", attrs->indicator);
 
-  if (txt_fg_color) {
+  else
+    offset += snprintf(buf + offset, size - offset, "nme:%s\n",
+                       attrs->indicator_name);
+
+  if (mask & UNTextFG) {
     offset +=
-        snprintf(cmdbuf + offset, size - offset, "tfg:%lx\n", txt_fg_color);
+        snprintf(buf + offset, size - offset, "tfg:%lx\n", attrs->text_fg);
   }
 
-  offset += snprintf(cmdbuf + offset, size - offset, "\n");
+  if (mask & UNIndicatorFG) {
+    offset +=
+        snprintf(buf + offset, size - offset, "ifg:%lx\n", attrs->indicator_fg);
+  }
 
-  if (!_send_buffer(conn, cmdbuf, offset))
+  if (mask & UNTextFont) {
+    offset +=
+        snprintf(buf + offset, size - offset, "tfn:%s\n", attrs->text_font);
+  }
+
+  if (mask & UNTimeout) {
+    offset +=
+        snprintf(buf + offset, size - offset, "tim:%lu\n", attrs->timeout);
+  }
+
+  offset += snprintf(buf + offset, size - offset, "\n");
+
+  if (!_send_buffer(conn, buf, offset))
     return false;
+
+  if (!_recv_buffer(conn, buf, sizeof(buf)) || strncmp(buf, "OK", 2) != 0) {
+    printf("fked");
+    return false;
+  }
 
   return true;
 }
