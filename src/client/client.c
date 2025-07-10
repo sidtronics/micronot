@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <micronot/client.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -33,8 +32,6 @@ static bool _send_buffer(int conn, const char *buf, size_t len) {
   while (sent < len) {
     ssize_t n = send(conn, buf + sent, len - sent, 0);
     if (n < 0) {
-      if (errno == EINTR)
-        continue;
       perror("ERROR: send");
       return false;
     }
@@ -54,9 +51,9 @@ static bool _recv_buffer(int conn, char *buf, size_t len) {
   size_t bytes_read = 0;
   do {
 
-    if (bytes_read >= 255) {
+    if (bytes_read >= len - 1) {
 
-      fprintf(stderr, "error: buffer overflow\n");
+      fprintf(stderr, "error: response too large\n");
       send(conn, "ERROR\n\n", 7, 0);
       return false;
     }
