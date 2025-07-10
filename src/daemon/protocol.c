@@ -9,7 +9,7 @@ int protocol_recv_command(int fd, char *buf, size_t len) {
   size_t bytes_read = 0;
   do {
 
-    if (bytes_read >= 255) {
+    if (bytes_read >= len - 1) {
 
       fprintf(stderr, "[unotd:server] ERROR: command too large\n");
       send(fd, "ERROR\n\n", 7, 0);
