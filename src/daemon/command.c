@@ -51,7 +51,7 @@ static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
     else if (strcmp(key, UNOT_KEY_INDICATOR_NAME) == 0) {
       for (size_t i = 0; i < unotd->config.indicators_count; i++) {
         char *indicator = unotd->config.indicators[i];
-        if (strncmp(val, indicator, strlen(val)) == 0) {
+        if (strcmp(val, indicator) == 0) {
           target->indicator = indicator + strlen(indicator) + 1;
           break;
         }
