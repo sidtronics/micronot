@@ -11,6 +11,8 @@
 #define UNTextFont (1 << 4)
 #define UNTimeout (1 << 5)
 
+typedef enum { UNOT_TYPE_MESSAGE, UNOT_TYPE_SPINNER } NotificationType;
+
 typedef struct {
   char *indicator;
   char *indicator_name;
@@ -24,13 +26,11 @@ typedef unsigned long NotificationID;
 
 int unot_get_connection(const char *sock_path);
 
-bool unot_notify_message(int conn, const char *text, u_int16_t mask,
-                         NotificationAttributes *attrs);
+bool unot_notify(int conn, const char *text, NotificationType type,
+                 u_int16_t mask, NotificationAttributes *attrs,
+                 NotificationID *id);
 
-bool unot_notify_spinner(int conn, u_int16_t mask,
-                         NotificationAttributes *attrs, NotificationID *id);
-
-bool unot_return_spinner(int conn, int retval, NotificationID *id);
+bool unot_return(int conn, int retval, NotificationID id);
 
 void unot_close_connection(int conn);
 
