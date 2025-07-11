@@ -1,42 +1,7 @@
-#include "protocol.h"
+#include "command.h"
+#include "../protocol.h"
 #include "utils.h"
-#include <stdint.h>
 #include <sys/socket.h>
-
-int protocol_recv_command(int fd, char *buf, size_t len) {
-
-  char *p = buf;
-  size_t bytes_read = 0;
-  do {
-
-    if (bytes_read >= len - 1) {
-
-      fprintf(stderr, "[unotd:server] ERROR: command too large\n");
-      send(fd, "ERROR\n\n", 7, 0);
-      return 1;
-    }
-
-    ssize_t n = recv(fd, buf + bytes_read, len - bytes_read - 1, 0);
-
-    if (n <= 0) {
-
-      if (n < 0) {
-        perror("[unotd:server] ERROR: recv");
-      }
-
-      fprintf(stderr, "[unotd:server] INFO: connection closed by the client\n");
-      return 1;
-    }
-
-    if (bytes_read != 0)
-      p = buf + bytes_read - 1;
-
-    bytes_read += n;
-
-  } while (strstr(p, "\n\n") == NULL);
-
-  return 0;
-}
 
 static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
 
@@ -52,6 +17,7 @@ static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
       fprintf(stderr, "[unotd:server] ERROR: malformed command: missing ':'\n");
       return false;
     }
+
     *colon = '\0';
 
     char *key = pair;
@@ -61,14 +27,14 @@ static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
       return false;
     }
 
-    if (strncmp(key, "txt", 3) == 0)
+    if (strcmp(key, UNOT_KEY_TEXT) == 0)
       txt = val;
 
-    else if (strncmp(key, "typ", 3) == 0) {
+    else if (strcmp(key, UNOT_KEY_TYPE) == 0) {
 
-      if (strncmp(val, "msg", 3) == 0)
+      if (strcmp(val, UNOT_VAL_MESSAGE) == 0)
         target->type = UNOT_TYPE_MESSAGE;
-      else if (strncmp(val, "spn", 3) == 0)
+      else if (strcmp(val, UNOT_VAL_SPINNER) == 0)
         target->type = UNOT_TYPE_SPINNER;
       else {
         fprintf(stderr,
@@ -79,10 +45,10 @@ static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
       got_type = true;
     }
 
-    else if (strncmp(key, "ind", 3) == 0)
+    else if (strcmp(key, UNOT_KEY_INDICATOR) == 0)
       ind = val;
 
-    else if (strncmp(key, "nme", 3) == 0) {
+    else if (strcmp(key, UNOT_KEY_INDICATOR_NAME) == 0) {
       for (size_t i = 0; i < unotd->config.indicators_count; i++) {
         char *indicator = unotd->config.indicators[i];
         if (strncmp(val, indicator, strlen(val)) == 0) {
@@ -95,16 +61,16 @@ static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
                 "[unotd:server] WARN: indicator of name '%s' not found\n", val);
     }
 
-    else if (strncmp(key, "tfn", 3) == 0)
+    else if (strcmp(key, UNOT_KEY_TEXT_FONT) == 0)
       target->txt_font = (void *)val;
 
-    else if (strncmp(key, "tfg", 3) == 0)
+    else if (strcmp(key, UNOT_KEY_TEXT_FG) == 0)
       target->txt_color = (void *)val;
 
-    else if (strncmp(key, "ifg", 3) == 0)
+    else if (strcmp(key, UNOT_KEY_INDICATOR_FG) == 0)
       target->ind_color = (void *)val;
 
-    else if (strncmp(key, "tim", 3) == 0) {
+    else if (strcmp(key, UNOT_KEY_TIMEOUT) == 0) {
       if (!utils_parse_ul(val, &target->timeout, 10)) {
         fprintf(stderr, "[unotd:server] ERROR: invalid timeout value: '%s'\n",
                 val);
@@ -119,17 +85,18 @@ static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
   }
 
   if (!txt) {
-    fprintf(stderr, "[unotd:server] ERROR: missing key: 'txt'\n");
+    fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n", UNOT_KEY_TEXT);
     return false;
   }
 
   if (!got_type) {
-    fprintf(stderr, "[unotd:server] ERROR: missing key: 'typ'\n");
+    fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n", UNOT_KEY_TYPE);
     return false;
   }
 
   if (!ind && !target->indicator) {
-    fprintf(stderr, "[unotd:server] ERROR: missing key: 'ind' or 'nme'\n");
+    fprintf(stderr, "[unotd:server] ERROR: missing key: '%s' or '%s'\n",
+            UNOT_KEY_INDICATOR, UNOT_KEY_INDICATOR_NAME);
     return false;
   }
 
@@ -161,6 +128,7 @@ static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
       fprintf(stderr, "[unotd:server] ERROR: malformed command: missing ':'\n");
       return false;
     }
+
     *colon = '\0';
 
     char *key = pair;
@@ -170,7 +138,7 @@ static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
       return false;
     }
 
-    if (strncmp(key, "wid", 3) == 0) {
+    if (strcmp(key, UNOT_KEY_NOTIF_ID) == 0) {
       if (!utils_parse_ul(val, wid, 10)) {
         fprintf(stderr, "[unotd:server] ERROR: invalid notification id: '%s'\n",
                 val);
@@ -179,7 +147,7 @@ static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
       got_wid = true;
     }
 
-    else if (strncmp(key, "ret", 3) == 0) {
+    else if (strcmp(key, UNOT_KEY_RETURN_VALUE) == 0) {
       if (!utils_parse_ul(val, ret, 10)) {
         fprintf(stderr, "[unotd:server] ERROR: invalid return value: '%s'\n",
                 val);
@@ -195,21 +163,23 @@ static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
   }
 
   if (!got_wid) {
-    fprintf(stderr, "[unotd:server] ERROR: missing key: 'wid'\n");
+    fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n",
+            UNOT_KEY_NOTIF_ID);
     return false;
   }
 
   if (!got_ret) {
-    fprintf(stderr, "[unotd:server] ERROR: missing key: 'ret'\n");
+    fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n",
+            UNOT_KEY_RETURN_VALUE);
     return false;
   }
 
   return true;
 }
 
-void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
+void command_handle(Unotd *unotd, int fd, char *buf, size_t len) {
 
-  char response[32] = {0};
+  char response[32];
   NotificationNode *node = NULL;
 
   const char *cmd = strtok(buf, "\n");
@@ -218,7 +188,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     goto ERROR;
   }
 
-  if (strncmp(cmd, "NTF", 3) == 0) {
+  if (strcmp(cmd, UNOT_CMD_NOTIFY) == 0) {
 
     node = calloc(1, sizeof(NotificationNode));
     ASSERT(node && "protocol_handle_command: malloc failed");
@@ -244,17 +214,17 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
     pthread_mutex_unlock(&unotd->nlist_lock);
 
     size_t offset = 0;
-    offset += snprintf(response + offset, 32 - offset, "OK\n");
+    offset += snprintf(response + offset, sizeof(response) - offset, "OK\n");
 
     if (not->type == UNOT_TYPE_SPINNER)
-      offset +=
-          snprintf(response + offset, 32 - offset, "wid:%lu\n", not->window);
+      offset += snprintf(response + offset, sizeof(response) - offset,
+                         "%s:%lu\n", UNOT_KEY_NOTIF_ID, not->window);
 
-    offset += snprintf(response + offset, 32 - offset, "\n");
+    offset += snprintf(response + offset, sizeof(response) - offset, "\n");
     goto OK;
   }
 
-  else if (strncmp(cmd, "RET", 3) == 0) {
+  else if (strcmp(cmd, UNOT_CMD_RETURN) == 0) {
 
     unsigned long wid;
     unsigned long ret;
@@ -287,7 +257,7 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
 
     pthread_mutex_unlock(&unotd->nlist_lock);
 
-    snprintf(response, 32, "OK\n\n");
+    snprintf(response, sizeof(response), "OK\n\n");
     goto OK;
   }
 
@@ -298,8 +268,8 @@ void protocol_handle_command(Unotd *unotd, int fd, char *buf, size_t len) {
   }
 
 ERROR:
-  snprintf(response, 32, "ERROR\n\n");
+  snprintf(response, sizeof(response), "ERROR\n\n");
 
 OK:
-  send(fd, response, strlen(response), 0);
+  protocol_send_block(fd, response, sizeof(response));
 }

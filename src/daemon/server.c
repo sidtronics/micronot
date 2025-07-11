@@ -1,5 +1,6 @@
 #include "server.h"
-#include "protocol.h"
+#include "../protocol.h"
+#include "command.h"
 #include "utils.h"
 #include <poll.h>
 #include <sys/socket.h>
@@ -94,16 +95,16 @@ void server_process_connections(Unotd *unotd) {
 
       else {
 
-        char buf[256] = {0};
+        char buf[256];
         int fd = set->fds[i].fd;
-        if (protocol_recv_command(fd, buf, sizeof(buf)) != 0) {
+        if (!protocol_recv_block(fd, buf, sizeof(buf))) {
           close(fd);
           _pollset_del_pfd(set, i);
           i--;
           continue;
         }
 
-        protocol_handle_command(unotd, fd, buf, sizeof(buf));
+        command_handle(unotd, fd, buf, sizeof(buf));
       }
     }
   }

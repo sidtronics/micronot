@@ -14,10 +14,11 @@ add_executable(
     src/daemon/nlist.c
     src/daemon/notification.c
     src/daemon/server.c
-    src/daemon/protocol.c
+    src/daemon/command.c
+    src/protocol.c
 )
 
-add_library(unotclient SHARED src/client/client.c)
+add_library(unotclient SHARED src/client/client.c src/protocol.c)
 target_include_directories(unotclient
     PUBLIC ${PROJECT_SOURCE_DIR}/include/
 )
