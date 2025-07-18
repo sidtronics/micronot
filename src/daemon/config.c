@@ -207,7 +207,8 @@ void config_load(Config *cfg, const char *filename) {
       break;
 
     case CONFIG_SECTION_NONE:
-      fprintf(stderr, "error: entry without any section at line no: %d\n", line_num);
+      fprintf(stderr, "error: entry without any section at line no: %d\n",
+              line_num);
       break;
 
     case CONFIG_SECTION_UNKNOWN:

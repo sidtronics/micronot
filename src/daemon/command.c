@@ -112,6 +112,11 @@ static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
     memcpy(target->indicator, ind, ind_len);
   }
 
+  if (!utils_validate_indicator(target->indicator, target->type)) {
+    fprintf(stderr, "[unotd:server] ERROR: malformed indicator string\n");
+    return false;
+  }
+
   return true;
 }
 

@@ -123,7 +123,8 @@ void utils_resolve_indicator_font(Display *dpy, double size,
   FcPatternDestroy(pattern);
 }
 
-XftColor* utils_allocate_color(Display *dpy, unsigned long color, XftColor *res) {
+XftColor *utils_allocate_color(Display *dpy, unsigned long color,
+                               XftColor *res) {
 
   XRenderColor xrcolor = {.red = ((color >> 16) & 0xff) * 257,
                           .green = ((color >> 8) & 0xff) * 257,
@@ -286,4 +287,43 @@ void utils_transform_notification(Notification *target, unsigned long ret) {
   target->frame = p + 1;
   target->type = UNOT_TYPE_MESSAGE;
   clock_gettime(CLOCK_MONOTONIC, &target->start_time);
+}
+
+bool utils_validate_indicator(const char *indicator, NotificationType type) {
+
+  if (!indicator)
+    return false;
+
+  char delim = *indicator;
+  char separator[3] = {delim, delim, '\0'};
+
+  char *first = strstr(indicator + 1, separator);
+  if (!first)
+    return false;
+
+  const char *last = indicator;
+  const char *curr;
+  do {
+    curr = strchr(last + 1, delim);
+    if (last + 1 == curr) // empty icon/frame
+      return false;
+    last = curr;
+  } while (curr != first);
+
+  if (type == UNOT_TYPE_MESSAGE)
+    return true; // valid icon indicator string
+
+  char *status_delim = strchr(first + 2, delim);
+  if (!status_delim)
+    return false;
+  if (first + 2 == status_delim) // empty success icon
+    return false;
+
+  char *second = strstr(status_delim + 1, separator);
+  if (!second)
+    return false;
+  if (status_delim + 1 == second) // empty fail icon
+    return false;
+
+  return true; // valid spinner indicator string
 }
