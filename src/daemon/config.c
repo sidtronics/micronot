@@ -24,17 +24,20 @@ static char *_trim(char *s) {
 static void _parse_field_ul(const char *key, const char *val,
                             unsigned long *res) {
   if (!utils_parse_ul(val, res, 10))
-    fprintf(stderr, "error: invalid value '%s' for key '%s'\n", val, key);
+    fprintf(stderr, "[unotd:config] ERROR: invalid value '%s' for key '%s'\n",
+            val, key);
 }
 
 static void _parse_field_u16(const char *key, const char *val, u_int16_t *res) {
   if (!utils_parse_u16(val, res, 10))
-    fprintf(stderr, "error: invalid value '%s' for key '%s'\n", val, key);
+    fprintf(stderr, "[unotd:config] ERROR: invalid value '%s' for key '%s'\n",
+            val, key);
 }
 
 static void _parse_field_dbl(const char *key, const char *val, double *res) {
   if (!utils_parse_dbl(val, res))
-    fprintf(stderr, "error: invalid value '%s' for key '%s'\n", val, key);
+    fprintf(stderr, "[unotd:config] ERROR: invalid value '%s' for key '%s'\n",
+            val, key);
 }
 
 static void _parse_color(const char *key, char *str, unsigned long *res) {
@@ -42,13 +45,15 @@ static void _parse_color(const char *key, char *str, unsigned long *res) {
   // color string: #RRGGBB
 
   if (!(strlen(str) == 7 && *str == '#')) {
-    fprintf(stderr, "error: invalid color string '%s' for key '%s'\n", str,
-            key);
+    fprintf(stderr,
+            "[unotd:config] ERROR: invalid color string '%s' for key '%s'\n",
+            str, key);
     return;
   }
 
   if (!utils_parse_ul(str + 1, res, 16))
-    fprintf(stderr, "error: invalid color '%s' for key '%s'\n", str + 1, key);
+    fprintf(stderr, "[unotd:config] ERROR: invalid color '%s' for key '%s'\n",
+            str + 1, key);
 }
 
 static void _parse_origin(const char *origin_str, Origin *res) {
@@ -62,7 +67,7 @@ static void _parse_origin(const char *origin_str, Origin *res) {
   else if (strcmp(origin_str, "bottom-left") == 0)
     *res = UNOT_ORIGIN_BOTTOM_LEFT;
   else
-    fprintf(stderr, "error: invalid origin '%s'\n", origin_str);
+    fprintf(stderr, "[unotd:config] ERROR: invalid origin '%s'\n", origin_str);
 }
 
 typedef enum _ConfigSection {
@@ -97,8 +102,10 @@ void config_load(Config *cfg, const char *filename) {
     if (*start == '[') {
       char *end = strchr(start + 1, ']');
       if (!end) {
-        fprintf(stderr, "error: missing ']' in config file at line no: %d\n",
-                line_num);
+        fprintf(
+            stderr,
+            "[unotd:config] ERROR: missing ']' in config file at line no: %d\n",
+            line_num);
         continue;
       }
 
@@ -109,7 +116,8 @@ void config_load(Config *cfg, const char *filename) {
       else if (strncmp(start + 1, "indicators", strlen("indicators")) == 0)
         section = CONFIG_SECTION_INDICATORS;
       else {
-        fprintf(stderr, "error: unknown section '%s' at line no: %d\n",
+        fprintf(stderr,
+                "[unotd:config] ERROR: unknown section '%s' at line no: %d\n",
                 start + 1, line_num);
         section = CONFIG_SECTION_UNKNOWN;
       }
@@ -118,20 +126,22 @@ void config_load(Config *cfg, const char *filename) {
 
     char *eq = strchr(start, '=');
     if (!eq) {
-      fprintf(stderr, "error: missing '=' at line no: %d\n", line_num);
+      fprintf(stderr, "[unotd:config] ERROR: missing '=' at line no: %d\n",
+              line_num);
       continue;
     }
 
     *eq = 0;
     char *key = _trim(start);
     if (!*key) {
-      fprintf(stderr, "error: missing key\n");
+      fprintf(stderr, "[unotd:config] ERROR: missing key\n");
       continue;
     }
 
     char *value = _trim(eq + 1);
     if (!*value) {
-      fprintf(stderr, "error: missing value at line no: %d\n", line_num);
+      fprintf(stderr, "[unotd:config] ERROR: missing value at line no: %d\n",
+              line_num);
       continue;
     }
 
@@ -139,7 +149,8 @@ void config_load(Config *cfg, const char *filename) {
       value = value + 1;
       char *end = strchr(value, '"');
       if (!end) {
-        fprintf(stderr, "error: missing quote at line no: %d\n", line_num);
+        fprintf(stderr, "[unotd:config] ERROR: missing '\"' at line no: %d\n",
+                line_num);
         continue;
       }
       *end = 0;
@@ -180,8 +191,9 @@ void config_load(Config *cfg, const char *filename) {
       else if (strcmp(key, "border_color") == 0)
         _parse_color(key, value, &cfg->border_color);
       else
-        fprintf(stderr, "error: unknown field: '%s' at line no: %d\n", key,
-                line_num);
+        fprintf(stderr,
+                "[unotd:config] ERROR: unknown field: '%s' at line no: %d\n",
+                key, line_num);
       break;
 
     case CONFIG_SECTION_INDICATORS:
@@ -207,8 +219,10 @@ void config_load(Config *cfg, const char *filename) {
       break;
 
     case CONFIG_SECTION_NONE:
-      fprintf(stderr, "error: entry without any section at line no: %d\n",
-              line_num);
+      fprintf(
+          stderr,
+          "[unotd:config] ERROR: entry without any section at line no: %d\n",
+          line_num);
       break;
 
     case CONFIG_SECTION_UNKNOWN:
