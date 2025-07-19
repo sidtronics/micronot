@@ -258,6 +258,8 @@ void command_handle(Unotd *unotd, int fd, char *buf, size_t len) {
       }
       target->notification.state = UNOT_NEED_REDRAW;
     }
+
+    target->notification.timeout = unotd->config.timeout;
     utils_transform_notification(&target->notification, ret);
 
     pthread_mutex_unlock(&unotd->nlist_lock);
