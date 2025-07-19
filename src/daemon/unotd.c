@@ -1,6 +1,7 @@
 #include "unotd.h"
 #include "utils.h"
 #include <stdint.h>
+#include <pthread.h>
 
 static void _init_notification_resources(Unotd *unotd, Notification *target) {
 

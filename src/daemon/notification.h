@@ -2,11 +2,9 @@
 #define MICRONOT_NOTIFICATION_H
 
 #include "config.h"
-
 #include <X11/Xft/Xft.h>
 #include <X11/Xlib.h>
 #include <stdbool.h>
-#include <time.h>
 
 typedef enum _NotificationType {
   UNOT_TYPE_MESSAGE,

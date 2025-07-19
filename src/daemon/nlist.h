@@ -2,8 +2,6 @@
 #define MICRONOT_NLIST_H
 
 #include "notification.h"
-#include <pthread.h>
-#include <stdbool.h>
 
 typedef struct _NotificationNode NotificationNode;
 

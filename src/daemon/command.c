@@ -1,7 +1,7 @@
 #include "command.h"
 #include "../protocol.h"
 #include "utils.h"
-#include <sys/socket.h>
+#include <pthread.h>
 
 static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
 

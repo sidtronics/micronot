@@ -1,10 +1,8 @@
 #include "server.h"
-#include "unotd.h"
 #include "utils.h"
-#include <assert.h>
 #include <locale.h>
 #include <poll.h>
-#include <time.h>
+#include <pthread.h>
 
 void *handle_server(void *arg) {
 

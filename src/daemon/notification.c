@@ -1,5 +1,6 @@
 #include "notification.h"
 #include "utils.h"
+#include <time.h>
 
 static Window _create_notification_window(Display *dpy, u_int16_t win_x,
                                           u_int16_t win_y, u_int16_t win_w,

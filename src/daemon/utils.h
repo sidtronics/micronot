@@ -1,14 +1,9 @@
 #ifndef MICRONOT_UTILS_H
 #define MICRONOT_UTILS_H
 
-#include <X11/Xft/Xft.h>
-#include <assert.h>
-#include <fontconfig/fontconfig.h>
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "config.h"
 #include "notification.h"
+#include <assert.h>
+#include <stdint.h>
 
 #if 1
 #define ASSERT(x) assert((x))

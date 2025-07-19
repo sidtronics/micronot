@@ -1,11 +1,6 @@
 #include "config.h"
 #include "utils.h"
 #include <ctype.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
 
 static char *_trim(char *s) {
 
