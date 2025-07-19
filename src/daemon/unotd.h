@@ -1,5 +1,5 @@
-#ifndef UNOT_UNOTD_H
-#define UNOT_UNOTD_H
+#ifndef MICRONOT_UNOTD_H
+#define MICRONOT_UNOTD_H
 
 #include "nlist.h"
 

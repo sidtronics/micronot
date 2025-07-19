@@ -1,5 +1,5 @@
-#ifndef UNOT_UTILS_H
-#define UNOT_UTILS_H
+#ifndef MICRONOT_UTILS_H
+#define MICRONOT_UTILS_H
 
 #include <X11/Xft/Xft.h>
 #include <assert.h>

@@ -1,5 +1,5 @@
-#ifndef UNOT_PROTOCOL_H
-#define UNOT_PROTOCOL_H
+#ifndef MICRONOT_PROTOCOL_H
+#define MICRONOT_PROTOCOL_H
 
 #include <stdbool.h>
 #include <stddef.h>

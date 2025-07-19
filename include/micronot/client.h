@@ -34,4 +34,4 @@ bool unot_return(int conn, int retval, NotificationID id);
 
 void unot_close_connection(int conn);
 
-#endif // !MICRONOT_CLIENT_H
+#endif

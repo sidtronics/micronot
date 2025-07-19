@@ -1,5 +1,5 @@
-#ifndef UNOT_CONFIG_H
-#define UNOT_CONFIG_H
+#ifndef MICRONOT_CONFIG_H
+#define MICRONOT_CONFIG_H
 
 #include <sys/types.h>
 

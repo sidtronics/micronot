@@ -1,5 +1,5 @@
-#ifndef UNOT_SERVER_H
-#define UNOT_SERVER_H
+#ifndef MICRONOT_SERVER_H
+#define MICRONOT_SERVER_H
 
 #include "unotd.h"
 

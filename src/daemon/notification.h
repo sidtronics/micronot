@@ -1,5 +1,5 @@
-#ifndef UNOT_NOTIFICATION_H
-#define UNOT_NOTIFICATION_H
+#ifndef MICRONOT_NOTIFICATION_H
+#define MICRONOT_NOTIFICATION_H
 
 #include "config.h"
 

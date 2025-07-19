@@ -1,5 +1,5 @@
-#ifndef UNOT_COMMAND_H
-#define UNOT_COMMAND_H
+#ifndef MICRONOT_COMMAND_H
+#define MICRONOT_COMMAND_H
 
 #include "unotd.h"
 

@@ -1,5 +1,5 @@
-#ifndef UNOT_NLIST_H
-#define UNOT_NLIST_H
+#ifndef MICRONOT_NLIST_H
+#define MICRONOT_NLIST_H
 
 #include "notification.h"
 #include <pthread.h>
