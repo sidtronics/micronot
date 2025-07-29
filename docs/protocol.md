@@ -5,15 +5,15 @@ All messages consist of lines of UTF-8 text and are terminated by a blank line (
 
 ---
 
-## Message Framing
+## Command Framing
 
 * Each command ends with a blank line (`\n\n`).
 * Fields are newline-separated.
-* No escaping is used.
 
 ---
 
-## Indicator Format
+## Indicator String Format
+
 
 | Term             | Format                                                                   | Example                                       |
 | ---------------- | ------------------------------------------------------------------------ | --------------------------------------------- |
@@ -35,24 +35,39 @@ All messages consist of lines of UTF-8 text and are terminated by a blank line (
 |-------|-------------|
 | `txt` | Notification text |
 | `ind` | Indicator string |
-| `nme` | Name of spinner (from config) |
+| `typ` | Indicator type (msg or spn)|
+| `nme` | Name of Indicator (from config) |
 | `tfn` | Message font (Fontconfig pattern string) |
-| `ifg` | Icon foreground color (`RRGGBB` hex) |
+| `ifg` | Indicator foreground color (`RRGGBB` hex) |
 | `tfg` | Message foreground color (`RRGGBB` hex) |
 | `tim` | Timeout in seconds (integer) | 
 
 ---
 
-## Command: MSG
+## Command Format
 
-Open a notification with icon.
+```
+COMMAND\n
+field1:value\n
+field2:value\n
+.
+.
+.
+fieldN:value\n
+\n
+```
+
+## Command: NTF
+
+Open a notification. Will return a <nid> if spinner notification.
 
 ### Format
 
 ```
-MSG
+NTF
 <txt>
-<ind>
+<ind> | <nme>
+<typ>
 [tfn]
 [ifg]
 [tfg]
@@ -64,40 +79,7 @@ MSG
 
 ```
 OK
-
-```
-
-Or:
-
-```
-ERROR
-
-```
-
----
-
-## Command: SPN
-
-Open a notification with spinner. Returns the window id of opened notification. Must be closed with RET command.
-
-### Format
-
-```
-SPN
-<txt>
-<ind>|<nme> 
-[tfn]
-[ifg]
-[tfg]
-[tim]
-
-```
-
-### Response
-
-```
-OK
-wid:<number>
+[nid]
 
 ```
 
@@ -112,14 +94,14 @@ ERROR
 
 ## Command: RET
 
-Close the spinner notification with window id <wid>. 0 indicates success. 1 indicates fail.
+Close the spinner notification with window id <nid>. 0 indicates success. 1 indicates fail.
 
 ### Format
 
 ```
 RET
-<wid:>
-<ret:>
+<nid>
+<ret>
 
 ```
 
@@ -136,11 +118,3 @@ Or:
 ERROR
 
 ```
-
----
-
-## Notes
-
-* Communication is UTF-8 encoded.
-* Messages end with a blank line.
-* More commands may be added later.
