@@ -67,14 +67,17 @@ int main() {
   }
 
   while (1) {
+
     pthread_mutex_lock(&unotd.nlist_lock);
+
     while (nlist_empty(&unotd.open)) {
       pthread_cond_wait(&unotd.nlist_empty, &unotd.nlist_lock);
     }
     unotd_update_notifications(&unotd);
+    XSync(unotd.display, False);
+
     pthread_mutex_unlock(&unotd.nlist_lock);
 
-    XSync(unotd.display, False);
     nanosleep(&(struct timespec){0, 50 * 1000 * 1000}, NULL);
   }
 }
