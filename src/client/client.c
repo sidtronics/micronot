@@ -81,29 +81,6 @@ NotificationID unot_notify(int conn, char *text, u_int16_t mask,
   return 0;
 }
 
-// bool unot_return(int conn, int retval, NotificationID id) {
-//
-//   if (id == 0)
-//     return false;
-//
-//   char buf[32];
-//   sprintf(buf, "%s\n%s:%lu\n%s:%d\n\n", UNOT_CMD_RETURN, UNOT_KEY_NOTIF_ID,
-//   id,
-//           UNOT_KEY_RETURN_VALUE, retval != 0);
-//
-//   if (!protocol_send_block(conn, buf, sizeof(buf)))
-//     return false;
-//
-//   if (!protocol_recv_block(conn, buf, sizeof(buf)))
-//     return false;
-//
-//   char *status = strtok(buf, "\n");
-//   if (strcmp(status, "OK") == 0)
-//     return true;
-//
-//   return false;
-// }
-
 void unot_disconnect(int conn) {
   if (conn >= 0) {
     if (close(conn) == -1) {

@@ -6,7 +6,7 @@
 
 // Commands
 #define UNOT_CMD_NOTIFY "NTF"
-// #define UNOT_CMD_RETURN "RET"
+#define UNOT_CMD_MODIFY "MDF"
 
 // Keys
 #define UNOT_KEY_TEXT "txt"
@@ -17,7 +17,6 @@
 #define UNOT_KEY_TEXT_FONT "tfn"
 #define UNOT_KEY_TIMEOUT "tim"
 #define UNOT_KEY_NOTIF_ID "nid"
-// #define UNOT_KEY_RETURN_VALUE "ret"
 
 typedef struct _ProtocolPair {
   char *key;
