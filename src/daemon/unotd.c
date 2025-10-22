@@ -3,43 +3,6 @@
 #include <pthread.h>
 #include <stdint.h>
 
-static void _init_notification_resources(Unotd *unotd, Notification *target) {
-
-  indicator_resolve_font(unotd->display, &target->ind,
-                         unotd->config.indicator_size);
-
-  if (target->txt_font) {
-
-    char *font_name = (void *)target->txt_font;
-
-    target->txt_font = XftFontOpenName(
-        unotd->display, DefaultScreen(unotd->display), font_name);
-
-    assert(target->txt_font &&
-           "unotd_allocate_ext_resources: failed to assign txt_font");
-  } else {
-    target->txt_font = unotd->txt_font;
-  }
-
-  if (target->txt_color) {
-
-    char *txt_color_str = (void *)target->txt_color;
-    target->txt_color =
-        utils_allocate_color_s(unotd->display, txt_color_str, NULL);
-  } else {
-    target->txt_color = &unotd->txt_color;
-  }
-
-  if (target->ind.color) {
-
-    char *ind_color_str = (void *)target->ind.color;
-    target->ind.color =
-        utils_allocate_color_s(unotd->display, ind_color_str, NULL);
-  } else {
-    target->ind.color = &unotd->ind_color;
-  }
-}
-
 static void _free_notification_resources(Unotd *unotd, Notification *target) {
 
   int screen = DefaultScreen(unotd->display);
@@ -65,7 +28,7 @@ static void _free_notification_resources(Unotd *unotd, Notification *target) {
 
 void unotd_update_notifications(Unotd *unotd) {
 
-  bool unmapped = false;
+  bool needs_reposition = false;
   NotificationNode *prev = NULL;
   NotificationNode *curr = unotd->open.head;
   while (curr) {
@@ -73,17 +36,9 @@ void unotd_update_notifications(Unotd *unotd) {
     Notification *nprev = prev ? &prev->notification : NULL;
     Notification *ncurr = &curr->notification;
 
-    if (unmapped && ncurr->state >= UNOT_NEED_REDRAW) {
-
-      utils_reposition_notification(unotd->display, &unotd->config, nprev,
-                                    ncurr);
-      notification_move(unotd->display, ncurr);
-    }
-
     switch (ncurr->state) {
 
     case UNOT_NEED_INIT:
-      _init_notification_resources(unotd, ncurr);
       utils_calculate_notification_layout(unotd->display, &unotd->config,
                                           ncurr);
       utils_reposition_notification(unotd->display, &unotd->config, nprev,
@@ -93,6 +48,8 @@ void unotd_update_notifications(Unotd *unotd) {
       ncurr->state = UNOT_NEED_UPDATE;
       break;
 
+    case UNOT_NEED_REDRAW:
+      needs_reposition = true;
     case UNOT_NEED_REOPEN:
       utils_reposition_notification(unotd->display, &unotd->config, nprev,
                                     ncurr);
@@ -102,15 +59,18 @@ void unotd_update_notifications(Unotd *unotd) {
       ncurr->state = UNOT_NEED_UPDATE;
       break;
 
-    case UNOT_NEED_REDRAW:
-      notification_draw(unotd->display, ncurr);
-      ncurr->state = UNOT_NEED_UPDATE;
-      break;
-
     case UNOT_NEED_UPDATE:
+
+      if (needs_reposition) {
+
+        utils_reposition_notification(unotd->display, &unotd->config, nprev,
+                                      ncurr);
+        notification_move(unotd->display, ncurr);
+      }
+
       if (notification_update(unotd->display, ncurr) == 0) {
 
-        unmapped = true;
+        needs_reposition = true;
 
         switch (ncurr->ind.type) {
 
