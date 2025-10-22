@@ -193,7 +193,6 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
   const char *text_font = NULL;
   const char *indicator = NULL;
   const char *indicator_fg = NULL;
-  // int type = -1;
 
   ProtocolPair pair;
   while (protocol_parse(pbuf, &pair)) {
@@ -274,19 +273,18 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
     indicator_init(&target->ind, target->txt + txt_len);
   }
 
-  target->txt_font = (void *)text_font;
-  target->txt_color = (void *)text_fg;
-  target->ind.color = (void *)indicator_fg;
+  target->txt_font = XftFontOpenName(unotd->display, DefaultScreen(unotd->display), text_font);
+  target->txt_color = utils_allocate_color_s(unotd->display, text_fg, NULL);
+  target->ind.color = utils_allocate_color_s(unotd->display, indicator_fg, NULL);
+  indicator_resolve_font(unotd->display, &target->ind, unotd->config.indicator_size);
 
   return true;
 }
 
 void command_handle(Unotd *unotd, int fd, ProtocolBuffer *pbuf) {
 
-  // char response[32];
   NotificationNode *node = NULL;
 
-  // const char *cmd = strtok(buf, "\n");
   ProtocolPair pair;
   protocol_parse(pbuf, &pair);
   if (*pair.key == 0) {
@@ -294,21 +292,24 @@ void command_handle(Unotd *unotd, int fd, ProtocolBuffer *pbuf) {
     goto ERROR;
   }
 
-  if (strcmp(pair.key, UNOT_CMD_NOTIFY) == 0) {
+  if (MATCH(pair.key, UNOT_CMD_NOTIFY)) {
 
     node = calloc(1, sizeof(NotificationNode));
     assert(node && "protocol_handle_command: malloc failed");
     Notification *not = &node->notification;
-    not->state = UNOT_NEED_INIT;
+    not->txt_font = unotd->txt_font;
+    not->txt_color = &unotd->txt_color;
+    not->ind.color = &unotd->ind_color;
     not->timeout = unotd->config.timeout;
+    not->state = UNOT_NEED_INIT;
+
+    pthread_mutex_lock(&unotd->nlist_lock);
 
     if (!_parse_cmd_ntf(unotd, pbuf, not)) {
       free(not->txt);
       free(node);
       goto ERROR;
     }
-
-    pthread_mutex_lock(&unotd->nlist_lock);
 
     nlist_append(&unotd->open, node);
     pthread_cond_signal(&unotd->nlist_empty);
@@ -323,60 +324,18 @@ void command_handle(Unotd *unotd, int fd, ProtocolBuffer *pbuf) {
     ProtocolAppend(pbuf, "OK", NULL);
     ProtocolAppendUL(pbuf, UNOT_KEY_NOTIF_ID, not->window);
     goto OK;
-
-    // size_t offset = 0;
-    // offset += snprintf(response + offset, sizeof(response) - offset, "OK\n");
-    //
-    // if (not->type == UNOT_TYPE_SPINNER)
-    //   offset += snprintf(response + offset, sizeof(response) - offset,
-    //                      "%s:%lu\n", UNOT_KEY_NOTIF_ID, not->window);
-    //
-    // offset += snprintf(response + offset, sizeof(response) - offset, "\n");
-    // goto OK;
   }
 
-  // else if (strcmp(cmd, UNOT_CMD_RETURN) == 0) {
-  //
-  //   unsigned long wid;
-  //   unsigned long ret;
-  //   if (!_parse_ret_fields(&wid, &ret))
-  //     goto ERROR;
-  //
-  //   pthread_mutex_lock(&unotd->nlist_lock);
-  //
-  //   NotificationNode *prev = NULL;
-  //   NotificationNode *target = nlist_find(&unotd->wait, &prev, wid);
-  //
-  //   if (target) {
-  //     target->notification.state = UNOT_NEED_REOPEN;
-  //     nlist_unlink(&unotd->wait, prev);
-  //     nlist_append(&unotd->open, target);
-  //     pthread_cond_signal(&unotd->nlist_empty);
-  //   }
-  //
-  //   else {
-  //     target = nlist_find(&unotd->open, &prev, wid);
-  //     if (!target) {
-  //       fprintf(stderr, "[unotd:server] ERROR: unknown notification id
-  //       '%lu'\n",
-  //               wid);
-  //       pthread_mutex_unlock(&unotd->nlist_lock);
-  //       goto ERROR;
-  //     }
-  //     target->notification.state = UNOT_NEED_REDRAW;
-  //   }
-  //
-  //   target->notification.timeout = unotd->config.timeout;
-  //   utils_transform_notification(&target->notification, ret);
-  //
-  //   pthread_mutex_unlock(&unotd->nlist_lock);
-  //
-  //   snprintf(response, sizeof(response), "OK\n\n");
-  //   goto OK;
-  // }
+  else if (MATCH(pair.key, UNOT_CMD_MODIFY)) {
 
-  else
+
+  }
+
+  else {
+
     fprintf(stderr, "[unotd:server] ERROR: unknown command '%s'\n", pair.key);
+    goto ERROR;
+  }
 
 ERROR:
   pbuf->state = pbuf->buf;
