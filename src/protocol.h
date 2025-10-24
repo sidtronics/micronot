@@ -24,7 +24,32 @@
 #define UNOT_VAL_MESSAGE "msg"
 #define UNOT_VAL_SPINNER "spn"
 
-bool protocol_send_block(int fd, char *buf, size_t len);
-bool protocol_recv_block(int fd, char *buf, size_t len);
+typedef struct _ProtocolPair {
+  char *key;
+  union {
+    char *val;
+    unsigned long ul_val;
+  };
+} ProtocolPair;
+
+typedef struct _ProtocolBuffer {
+  char *buf;
+  char *state;
+  size_t len;
+} ProtocolBuffer;
+
+bool protocol_send(int fd, ProtocolBuffer *pbuf);
+bool protocol_recv(int fd, ProtocolBuffer *pbuf);
+bool protocol_parse(ProtocolBuffer *pbuf, ProtocolPair *pair);
+bool protocol_append(ProtocolBuffer *pbuf, ProtocolPair pair, bool ul);
+
+#define ProtocolBufferInit(buf)                                                \
+  {.buf = (buf), .state = (buf), .len = sizeof(buf)}
+
+#define ProtocolAppend(pbuf, k, v)                                         \
+  (protocol_append((pbuf), (ProtocolPair){.key = (k), .val = (v)}, false))
+
+#define ProtocolAppendUL(pbuf, k, v)                                       \
+  (protocol_append((pbuf), (ProtocolPair){.key = (k), .ul_val = (v)}, true))
 
 #endif
