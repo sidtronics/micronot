@@ -3,197 +3,317 @@
 #include "utils.h"
 #include <pthread.h>
 
-static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
+// static bool _parse_ntf_fields(Unotd *unotd, Notification *target) {
+//
+//   const char *txt = NULL;
+//   const char *ind = NULL;
+//   bool got_type = false;
+//
+//   char *pair = NULL;
+//   while ((pair = strtok(NULL, "\n"))) {
+//
+//     char *colon = strchr(pair, ':');
+//     if (!colon) {
+//       fprintf(stderr, "[unotd:server] ERROR: malformed command: missing
+//       ':'\n"); return false;
+//     }
+//
+//     *colon = '\0';
+//
+//     char *key = pair;
+//     char *val = colon + 1;
+//     if (!key || !val) {
+//       fprintf(stderr, "[unotd:server] ERROR: malformed key-value pair\n");
+//       return false;
+//     }
+//
+//     if (strcmp(key, UNOT_KEY_TEXT) == 0)
+//       txt = val;
+//
+//     else if (strcmp(key, UNOT_KEY_TYPE) == 0) {
+//
+//       if (strcmp(val, UNOT_VAL_MESSAGE) == 0)
+//         target->type = UNOT_TYPE_MESSAGE;
+//       else if (strcmp(val, UNOT_VAL_SPINNER) == 0)
+//         target->type = UNOT_TYPE_SPINNER;
+//       else {
+//         fprintf(stderr,
+//                 "[unotd:server] ERROR: unknown notification type: '%s'\n",
+//                 val);
+//         return false;
+//       }
+//
+//       got_type = true;
+//     }
+//
+//     else if (strcmp(key, UNOT_KEY_INDICATOR) == 0)
+//       ind = val;
+//
+//     else if (strcmp(key, UNOT_KEY_INDICATOR_NAME) == 0) {
+//       for (size_t i = 0; i < unotd->config.indicators_count; i++) {
+//         char *indicator = unotd->config.indicators[i];
+//         if (strcmp(val, indicator) == 0) {
+//           target->indicator = indicator + strlen(indicator) + 1;
+//           break;
+//         }
+//       }
+//       if (!target->indicator)
+//         fprintf(stderr,
+//                 "[unotd:server] WARN: indicator of name '%s' not found\n",
+//                 val);
+//     }
+//
+//     else if (strcmp(key, UNOT_KEY_TEXT_FONT) == 0)
+//       target->txt_font = (void *)val;
+//
+//     else if (strcmp(key, UNOT_KEY_TEXT_FG) == 0)
+//       target->txt_color = (void *)val;
+//
+//     else if (strcmp(key, UNOT_KEY_INDICATOR_FG) == 0)
+//       target->ind_color = (void *)val;
+//
+//     else if (strcmp(key, UNOT_KEY_TIMEOUT) == 0) {
+//       if (!utils_parse_ul(val, &target->timeout, 10)) {
+//         fprintf(stderr, "[unotd:server] ERROR: invalid timeout value:
+//         '%s'\n",
+//                 val);
+//         return false;
+//       }
+//     }
+//
+//     else {
+//       fprintf(stderr, "[unotd:server] ERROR: unknown key: '%s'\n", key);
+//       return false;
+//     }
+//   }
+//
+//   if (!txt) {
+//     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n",
+//     UNOT_KEY_TEXT); return false;
+//   }
+//
+//   if (!got_type) {
+//     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n",
+//     UNOT_KEY_TYPE); return false;
+//   }
+//
+//   if (!ind && !target->indicator) {
+//     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s' or '%s'\n",
+//             UNOT_KEY_INDICATOR, UNOT_KEY_INDICATOR_NAME);
+//     return false;
+//   }
+//
+//   if (target->indicator)
+//     target->text = strdup(txt);
+//
+//   else {
+//     size_t txt_len = strlen(txt) + 1;
+//     size_t ind_len = strlen(ind) + 1;
+//     target->text = malloc(txt_len + ind_len);
+//     memcpy(target->text, txt, txt_len);
+//     target->indicator = target->text + txt_len;
+//     memcpy(target->indicator, ind, ind_len);
+//   }
+//
+//   if (!utils_validate_indicator(target->indicator, target->type)) {
+//     fprintf(stderr, "[unotd:server] ERROR: malformed indicator string\n");
+//     return false;
+//   }
+//
+//   return true;
+// }
 
-  const char *txt = NULL;
-  const char *ind = NULL;
-  bool got_type = false;
+// static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
+//
+//   bool got_wid = false;
+//   bool got_ret = false;
+//
+//   char *pair = NULL;
+//   while ((pair = strtok(NULL, "\n"))) {
+//
+//     char *colon = strchr(pair, ':');
+//     if (!colon) {
+//       fprintf(stderr, "[unotd:server] ERROR: malformed command: missing
+//       ':'\n"); return false;
+//     }
+//
+//     *colon = '\0';
+//
+//     char *key = pair;
+//     char *val = colon + 1;
+//     if (!key || !val) {
+//       fprintf(stderr, "[unotd:server] ERROR: malformed key-value pair\n");
+//       return false;
+//     }
+//
+//     if (strcmp(key, UNOT_KEY_NOTIF_ID) == 0) {
+//       if (!utils_parse_ul(val, wid, 10)) {
+//         fprintf(stderr, "[unotd:server] ERROR: invalid notification id:
+//         '%s'\n",
+//                 val);
+//         return false;
+//       }
+//       got_wid = true;
+//     }
+//
+//     else if (strcmp(key, UNOT_KEY_RETURN_VALUE) == 0) {
+//       if (!utils_parse_ul(val, ret, 10)) {
+//         fprintf(stderr, "[unotd:server] ERROR: invalid return value: '%s'\n",
+//                 val);
+//         return false;
+//       }
+//       got_ret = true;
+//     }
+//
+//     else {
+//       fprintf(stderr, "[unotd:server] ERROR: unknown key: '%s'\n", key);
+//       return false;
+//     }
+//   }
+//
+//   if (!got_wid) {
+//     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n",
+//             UNOT_KEY_NOTIF_ID);
+//     return false;
+//   }
+//
+//   if (!got_ret) {
+//     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n",
+//             UNOT_KEY_RETURN_VALUE);
+//     return false;
+//   }
+//
+//   return true;
+// }
 
-  char *pair = NULL;
-  while ((pair = strtok(NULL, "\n"))) {
+bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
 
-    char *colon = strchr(pair, ':');
-    if (!colon) {
-      fprintf(stderr, "[unotd:server] ERROR: malformed command: missing ':'\n");
+  const char *text = NULL;
+  const char *text_fg = NULL;
+  const char *text_font = NULL;
+  const char *indicator = NULL;
+  const char *indicator_fg = NULL;
+  int type = -1;
+
+  ProtocolPair pair;
+  while (protocol_parse(pbuf, &pair)) {
+
+    if (!pair.key)
       return false;
-    }
 
-    *colon = '\0';
+    if (MATCH(pair.key, UNOT_KEY_TEXT))
+      text = pair.val;
 
-    char *key = pair;
-    char *val = colon + 1;
-    if (!key || !val) {
-      fprintf(stderr, "[unotd:server] ERROR: malformed key-value pair\n");
-      return false;
-    }
+    else if (MATCH(pair.key, UNOT_KEY_TYPE)) {
 
-    if (strcmp(key, UNOT_KEY_TEXT) == 0)
-      txt = val;
-
-    else if (strcmp(key, UNOT_KEY_TYPE) == 0) {
-
-      if (strcmp(val, UNOT_VAL_MESSAGE) == 0)
-        target->type = UNOT_TYPE_MESSAGE;
-      else if (strcmp(val, UNOT_VAL_SPINNER) == 0)
-        target->type = UNOT_TYPE_SPINNER;
+      if (MATCH(pair.val, UNOT_VAL_MESSAGE))
+        type = UNOT_TYPE_MESSAGE;
+      else if (MATCH(pair.val, UNOT_VAL_SPINNER))
+        type = UNOT_TYPE_SPINNER;
       else {
         fprintf(stderr,
-                "[unotd:server] ERROR: unknown notification type: '%s'\n", val);
+                "[unotd:server] ERROR: unknown notification type: '%s'\n",
+                pair.val);
         return false;
       }
-
-      got_type = true;
     }
 
-    else if (strcmp(key, UNOT_KEY_INDICATOR) == 0)
-      ind = val;
+    else if (MATCH(pair.key, UNOT_KEY_INDICATOR))
+      indicator = pair.val;
 
-    else if (strcmp(key, UNOT_KEY_INDICATOR_NAME) == 0) {
+    else if (MATCH(pair.key, UNOT_KEY_INDICATOR_NAME)) {
       for (size_t i = 0; i < unotd->config.indicators_count; i++) {
         char *indicator = unotd->config.indicators[i];
-        if (strcmp(val, indicator) == 0) {
+        if (MATCH(pair.val, indicator)) {
           target->indicator = indicator + strlen(indicator) + 1;
           break;
         }
       }
       if (!target->indicator)
         fprintf(stderr,
-                "[unotd:server] WARN: indicator of name '%s' not found\n", val);
+                "[unotd:server] WARN: indicator of name '%s' not found\n",
+                pair.val);
     }
 
-    else if (strcmp(key, UNOT_KEY_TEXT_FONT) == 0)
-      target->txt_font = (void *)val;
+    else if (MATCH(pair.key, UNOT_KEY_TEXT_FONT))
+      text_font = pair.val;
 
-    else if (strcmp(key, UNOT_KEY_TEXT_FG) == 0)
-      target->txt_color = (void *)val;
+    else if (MATCH(pair.key, UNOT_KEY_TEXT_FG))
+      text_fg = pair.val;
 
-    else if (strcmp(key, UNOT_KEY_INDICATOR_FG) == 0)
-      target->ind_color = (void *)val;
+    else if (MATCH(pair.key, UNOT_KEY_INDICATOR_FG))
+      indicator_fg = pair.val;
 
-    else if (strcmp(key, UNOT_KEY_TIMEOUT) == 0) {
-      if (!utils_parse_ul(val, &target->timeout, 10)) {
+    else if (MATCH(pair.key, UNOT_KEY_TIMEOUT)) {
+      if (!utils_parse_ul(pair.val, &target->timeout, 10)) {
         fprintf(stderr, "[unotd:server] ERROR: invalid timeout value: '%s'\n",
-                val);
+                pair.val);
         return false;
       }
     }
 
     else {
-      fprintf(stderr, "[unotd:server] ERROR: unknown key: '%s'\n", key);
+      fprintf(stderr, "[unotd:server] ERROR: unknown key: '%s'\n", pair.key);
       return false;
     }
   }
 
-  if (!txt) {
+  if (!text) {
     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n", UNOT_KEY_TEXT);
     return false;
   }
 
-  if (!got_type) {
+  if (type == -1) {
     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n", UNOT_KEY_TYPE);
     return false;
   }
 
-  if (!ind && !target->indicator) {
+  if (!indicator && !target->indicator) {
     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s' or '%s'\n",
             UNOT_KEY_INDICATOR, UNOT_KEY_INDICATOR_NAME);
     return false;
   }
 
   if (target->indicator)
-    target->text = strdup(txt);
+    target->text = strdup(text);
 
   else {
-    size_t txt_len = strlen(txt) + 1;
-    size_t ind_len = strlen(ind) + 1;
+    size_t txt_len = strlen(text) + 1;
+    size_t ind_len = strlen(indicator) + 1;
     target->text = malloc(txt_len + ind_len);
-    memcpy(target->text, txt, txt_len);
+    memcpy(target->text, text, txt_len);
     target->indicator = target->text + txt_len;
-    memcpy(target->indicator, ind, ind_len);
+    memcpy(target->indicator, indicator, ind_len);
   }
+
+  target->type = type;
 
   if (!utils_validate_indicator(target->indicator, target->type)) {
     fprintf(stderr, "[unotd:server] ERROR: malformed indicator string\n");
     return false;
   }
 
-  return true;
-}
-
-static bool _parse_ret_fields(unsigned long *wid, unsigned long *ret) {
-
-  bool got_wid = false;
-  bool got_ret = false;
-
-  char *pair = NULL;
-  while ((pair = strtok(NULL, "\n"))) {
-
-    char *colon = strchr(pair, ':');
-    if (!colon) {
-      fprintf(stderr, "[unotd:server] ERROR: malformed command: missing ':'\n");
-      return false;
-    }
-
-    *colon = '\0';
-
-    char *key = pair;
-    char *val = colon + 1;
-    if (!key || !val) {
-      fprintf(stderr, "[unotd:server] ERROR: malformed key-value pair\n");
-      return false;
-    }
-
-    if (strcmp(key, UNOT_KEY_NOTIF_ID) == 0) {
-      if (!utils_parse_ul(val, wid, 10)) {
-        fprintf(stderr, "[unotd:server] ERROR: invalid notification id: '%s'\n",
-                val);
-        return false;
-      }
-      got_wid = true;
-    }
-
-    else if (strcmp(key, UNOT_KEY_RETURN_VALUE) == 0) {
-      if (!utils_parse_ul(val, ret, 10)) {
-        fprintf(stderr, "[unotd:server] ERROR: invalid return value: '%s'\n",
-                val);
-        return false;
-      }
-      got_ret = true;
-    }
-
-    else {
-      fprintf(stderr, "[unotd:server] ERROR: unknown key: '%s'\n", key);
-      return false;
-    }
-  }
-
-  if (!got_wid) {
-    fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n",
-            UNOT_KEY_NOTIF_ID);
-    return false;
-  }
-
-  if (!got_ret) {
-    fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n",
-            UNOT_KEY_RETURN_VALUE);
-    return false;
-  }
+  target->txt_font = (void *)text_font;
+  target->txt_color = (void *)text_fg;
+  target->ind_color = (void *)indicator_fg;
 
   return true;
 }
 
-void command_handle(Unotd *unotd, int fd, char *buf, size_t len) {
+void command_handle(Unotd *unotd, int fd, ProtocolBuffer *pbuf) {
 
-  char response[32];
+  // char response[32];
   NotificationNode *node = NULL;
 
-  const char *cmd = strtok(buf, "\n");
-  if (cmd == NULL) {
+  // const char *cmd = strtok(buf, "\n");
+  ProtocolPair pair;
+  protocol_parse(pbuf, &pair);
+  if (*pair.key == 0) {
     fprintf(stderr, "[unotd:server] ERROR: missing command\n");
     goto ERROR;
   }
 
-  if (strcmp(cmd, UNOT_CMD_NOTIFY) == 0) {
+  if (strcmp(pair.key, UNOT_CMD_NOTIFY) == 0) {
 
     node = calloc(1, sizeof(NotificationNode));
     ASSERT(node && "protocol_handle_command: malloc failed");
@@ -201,7 +321,7 @@ void command_handle(Unotd *unotd, int fd, char *buf, size_t len) {
     not->state = UNOT_NEED_INIT;
     not->timeout = unotd->config.timeout;
 
-    if (!_parse_ntf_fields(unotd, &node->notification)) {
+    if (!_parse_cmd_ntf(unotd, pbuf, not)) {
       free(not->text);
       free(node);
       goto ERROR;
@@ -218,65 +338,69 @@ void command_handle(Unotd *unotd, int fd, char *buf, size_t len) {
 
     pthread_mutex_unlock(&unotd->nlist_lock);
 
-    size_t offset = 0;
-    offset += snprintf(response + offset, sizeof(response) - offset, "OK\n");
-
-    if (not->type == UNOT_TYPE_SPINNER)
-      offset += snprintf(response + offset, sizeof(response) - offset,
-                         "%s:%lu\n", UNOT_KEY_NOTIF_ID, not->window);
-
-    offset += snprintf(response + offset, sizeof(response) - offset, "\n");
+    pbuf->state = pbuf->buf;
+    ProtocolAppend(pbuf, "OK", NULL);
+    ProtocolAppendUL(pbuf, UNOT_KEY_NOTIF_ID, not->window);
     goto OK;
+
+    // size_t offset = 0;
+    // offset += snprintf(response + offset, sizeof(response) - offset, "OK\n");
+    //
+    // if (not->type == UNOT_TYPE_SPINNER)
+    //   offset += snprintf(response + offset, sizeof(response) - offset,
+    //                      "%s:%lu\n", UNOT_KEY_NOTIF_ID, not->window);
+    //
+    // offset += snprintf(response + offset, sizeof(response) - offset, "\n");
+    // goto OK;
   }
 
-  else if (strcmp(cmd, UNOT_CMD_RETURN) == 0) {
+  // else if (strcmp(cmd, UNOT_CMD_RETURN) == 0) {
+  //
+  //   unsigned long wid;
+  //   unsigned long ret;
+  //   if (!_parse_ret_fields(&wid, &ret))
+  //     goto ERROR;
+  //
+  //   pthread_mutex_lock(&unotd->nlist_lock);
+  //
+  //   NotificationNode *prev = NULL;
+  //   NotificationNode *target = nlist_find(&unotd->wait, &prev, wid);
+  //
+  //   if (target) {
+  //     target->notification.state = UNOT_NEED_REOPEN;
+  //     nlist_unlink(&unotd->wait, prev);
+  //     nlist_append(&unotd->open, target);
+  //     pthread_cond_signal(&unotd->nlist_empty);
+  //   }
+  //
+  //   else {
+  //     target = nlist_find(&unotd->open, &prev, wid);
+  //     if (!target) {
+  //       fprintf(stderr, "[unotd:server] ERROR: unknown notification id
+  //       '%lu'\n",
+  //               wid);
+  //       pthread_mutex_unlock(&unotd->nlist_lock);
+  //       goto ERROR;
+  //     }
+  //     target->notification.state = UNOT_NEED_REDRAW;
+  //   }
+  //
+  //   target->notification.timeout = unotd->config.timeout;
+  //   utils_transform_notification(&target->notification, ret);
+  //
+  //   pthread_mutex_unlock(&unotd->nlist_lock);
+  //
+  //   snprintf(response, sizeof(response), "OK\n\n");
+  //   goto OK;
+  // }
 
-    unsigned long wid;
-    unsigned long ret;
-    if (!_parse_ret_fields(&wid, &ret))
-      goto ERROR;
-
-    pthread_mutex_lock(&unotd->nlist_lock);
-
-    NotificationNode *prev = NULL;
-    NotificationNode *target = nlist_find(&unotd->wait, &prev, wid);
-
-    if (target) {
-      target->notification.state = UNOT_NEED_REOPEN;
-      nlist_unlink(&unotd->wait, prev);
-      nlist_append(&unotd->open, target);
-      pthread_cond_signal(&unotd->nlist_empty);
-    }
-
-    else {
-      target = nlist_find(&unotd->open, &prev, wid);
-      if (!target) {
-        fprintf(stderr, "[unotd:server] ERROR: unknown notification id '%lu'\n",
-                wid);
-        pthread_mutex_unlock(&unotd->nlist_lock);
-        goto ERROR;
-      }
-      target->notification.state = UNOT_NEED_REDRAW;
-    }
-
-    target->notification.timeout = unotd->config.timeout;
-    utils_transform_notification(&target->notification, ret);
-
-    pthread_mutex_unlock(&unotd->nlist_lock);
-
-    snprintf(response, sizeof(response), "OK\n\n");
-    goto OK;
-  }
-
-  else {
-
-    fprintf(stderr, "[unotd:server] ERROR: unknown command '%s'\n", cmd);
-    goto ERROR;
-  }
+  else
+    fprintf(stderr, "[unotd:server] ERROR: unknown command '%s'\n", pair.key);
 
 ERROR:
-  snprintf(response, sizeof(response), "ERROR\n\n");
+  pbuf->state = pbuf->buf;
+  ProtocolAppend(pbuf, "ERROR", NULL);
 
 OK:
-  protocol_send_block(fd, response, sizeof(response));
+  protocol_send(fd, pbuf);
 }

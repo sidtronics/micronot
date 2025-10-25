@@ -143,7 +143,7 @@ XftColor *utils_allocate_color_s(Display *dpy, const char *color_str,
                                  XftColor *res) {
 
   unsigned long color;
-  bool parsed = utils_parse_ul(color_str, &color, 16);
+  bool parsed = utils_parse_ul(color_str, &color, 10);
   ASSERT(parsed && "utils_allocate_color: error parsing color string");
 
   return utils_allocate_color(dpy, color, res);

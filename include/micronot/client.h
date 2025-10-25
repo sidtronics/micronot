@@ -15,7 +15,6 @@ typedef enum { UNOT_TYPE_MESSAGE, UNOT_TYPE_SPINNER } NotificationType;
 
 typedef struct {
   char *indicator;
-  char *indicator_name;
   unsigned long text_fg;
   unsigned long indicator_fg;
   char *text_font;
@@ -24,14 +23,17 @@ typedef struct {
 
 typedef unsigned long NotificationID;
 
-int unot_get_connection(const char *sock_path);
+int un_connect(const char *sock_path);
 
-bool unot_notify(int conn, const char *text, NotificationType type,
-                 u_int16_t mask, NotificationAttributes *attrs,
-                 NotificationID *id);
+NotificationID un_notify(int conn, char *text, NotificationType type,
+                         u_int16_t mask, NotificationAttributes *attrs);
 
-bool unot_return(int conn, int retval, NotificationID id);
+// bool unot_notify(int conn, const char *text, NotificationType type,
+//                  u_int16_t mask, NotificationAttributes *attrs,
+//                  NotificationID *id);
 
-void unot_close_connection(int conn);
+// bool unot_return(int conn, int retval, NotificationID id);
+
+void un_disconnect(int conn);
 
 #endif

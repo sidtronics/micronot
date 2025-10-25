@@ -2,7 +2,8 @@
 #define MICRONOT_COMMAND_H
 
 #include "unotd.h"
+#include "../protocol.h"
 
-void command_handle(Unotd *unotd, int fd, char *buf, size_t len);
+void command_handle(Unotd *unotd, int fd, ProtocolBuffer *pbuf);
 
 #endif

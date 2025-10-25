@@ -96,15 +96,16 @@ void server_process_connections(Unotd *unotd) {
       else {
 
         char buf[256];
+        ProtocolBuffer pbuf = ProtocolBufferInit(buf);
         int fd = set->fds[i].fd;
-        if (!protocol_recv_block(fd, buf, sizeof(buf))) {
+        if (!protocol_recv(fd, &pbuf)) {
           close(fd);
           _pollset_del_pfd(set, i);
           i--;
           continue;
         }
 
-        command_handle(unotd, fd, buf, sizeof(buf));
+        command_handle(unotd, fd, &pbuf);
       }
     }
   }

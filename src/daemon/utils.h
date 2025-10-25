@@ -11,6 +11,7 @@
 #define ASSERT(...) ((void)0)
 #endif
 
+#define MATCH(a, b) (strcmp((a), (b)) == 0)
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 bool utils_parse_ul(const char *str, unsigned long *res, int base);

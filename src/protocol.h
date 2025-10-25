@@ -46,10 +46,10 @@ bool protocol_append(ProtocolBuffer *pbuf, ProtocolPair pair, bool ul);
 #define ProtocolBufferInit(buf)                                                \
   {.buf = (buf), .state = (buf), .len = sizeof(buf)}
 
-#define ProtocolAppend(pbuf, k, v)                                         \
+#define ProtocolAppend(pbuf, k, v)                                             \
   (protocol_append((pbuf), (ProtocolPair){.key = (k), .val = (v)}, false))
 
-#define ProtocolAppendUL(pbuf, k, v)                                       \
+#define ProtocolAppendUL(pbuf, k, v)                                           \
   (protocol_append((pbuf), (ProtocolPair){.key = (k), .ul_val = (v)}, true))
 
 #endif
