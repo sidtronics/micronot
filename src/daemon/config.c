@@ -193,6 +193,14 @@ void config_load(Config *cfg, const char *filename) {
 
     case CONFIG_SECTION_INDICATORS:
 
+      if (!indicator_validate(value)) {
+        fprintf(stderr,
+                "[unotd:config] WARN: ignored malformed indicator string '%s' "
+                "at line no: %d\n",
+                key, line_num);
+        continue;
+      }
+
       if (cfg->indicators_count >= indicators_capacity) {
 
         indicators_capacity =
@@ -201,7 +209,7 @@ void config_load(Config *cfg, const char *filename) {
         cfg->indicators =
             realloc(cfg->indicators, indicators_capacity * sizeof(char *));
 
-        ASSERT(cfg->indicators && "config_load: failed reallocating");
+        assert(cfg->indicators && "config_load: failed reallocating");
       }
 
       size_t name_len = strlen(key) + 1;

@@ -1,6 +1,6 @@
 #include "notification.h"
-#include "utils.h"
 #include <time.h>
+#include <assert.h>
 
 static Window _create_notification_window(Display *dpy, u_int16_t win_x,
                                           u_int16_t win_y, u_int16_t win_w,
@@ -22,7 +22,7 @@ static Window _create_notification_window(Display *dpy, u_int16_t win_x,
                                 win_w, win_h, bor_w, CopyFromParent,
                                 InputOutput, CopyFromParent, mask, &attrs);
 
-  ASSERT(window && "_create_notification_window: failed to create window.");
+  assert(window && "_create_notification_window: failed to create window.");
 
   XSelectInput(dpy, window, ButtonPressMask);
 
@@ -31,18 +31,13 @@ static Window _create_notification_window(Display *dpy, u_int16_t win_x,
 
 static void _draw_indicator(Display *dpy, Notification *notification) {
 
-  const char delim = *notification->indicator;
-  const char *end = strchrnul(notification->frame, delim);
+  const char delim = *notification->ind.start;
+  const char *end = strchr(notification->ind.frame, delim);
 
-  XftDrawStringUtf8(notification->draw, notification->ind_color,
-                    notification->ind_font, notification->ind_x,
-                    notification->ind_y, (FcChar8 *)notification->frame,
-                    (size_t)(end - notification->frame));
-
-  if (*(end + 1) == delim)
-    notification->frame = notification->indicator + 1;
-  else
-    notification->frame = end + 1;
+  XftDrawStringUtf8(notification->draw, notification->ind.color,
+                    notification->ind.font, notification->ind_x,
+                    notification->ind_y, (FcChar8 *)notification->ind.frame,
+                    (size_t)(end - notification->ind.frame));
 }
 
 void notification_draw(Display *dpy, Notification *notification) {
@@ -53,8 +48,8 @@ void notification_draw(Display *dpy, Notification *notification) {
 
   XftDrawStringUtf8(notification->draw, notification->txt_color,
                     notification->txt_font, notification->txt_x,
-                    notification->txt_y, (FcChar8 *)notification->text,
-                    strlen(notification->text));
+                    notification->txt_y, (FcChar8 *)notification->txt,
+                    strlen(notification->txt));
 
   clock_gettime(CLOCK_MONOTONIC, &notification->start_time);
   notification->last_time = notification->start_time;
@@ -63,14 +58,12 @@ void notification_draw(Display *dpy, Notification *notification) {
 void notification_open(Display *dpy, Config *config,
                        Notification *notification) {
 
-  ASSERT(notification->indicator && "notification_open: indicator not set");
-  ASSERT(notification->ind_font && "notification_open: ind_font not set");
-  ASSERT(notification->ind_color && "notification_open: ind_color not set");
-  ASSERT(notification->text && "notification_open: text not set");
-  ASSERT(notification->txt_font && "notification_open: txt_font not set");
-  ASSERT(notification->txt_color && "notification_open: txt_color not set");
-
-  notification->frame = notification->indicator + 1;
+  assert(notification->indicator && "notification_open: indicator not set");
+  assert(notification->ind_font && "notification_open: ind_font not set");
+  assert(notification->ind_color && "notification_open: ind_color not set");
+  assert(notification->text && "notification_open: text not set");
+  assert(notification->txt_font && "notification_open: txt_font not set");
+  assert(notification->txt_color && "notification_open: txt_color not set");
 
   notification->window = _create_notification_window(
       dpy, notification->win_x, notification->win_y, notification->win_w,
@@ -126,12 +119,14 @@ bool notification_update(Display *dpy, Notification *notification) {
     return false;
   }
 
-  if (notification->type == UNOT_TYPE_SPINNER) {
+  if (notification->ind.type == INDICATOR_TYPE_SPINNER) {
 
     elapsed = (now.tv_sec - notification->last_time.tv_sec) * 1000 +
               (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;
 
     if (elapsed >= 150) {
+
+      indicator_update(&notification->ind);
 
       XClearArea(dpy, notification->window, 0, 0, notification->txt_x, 0,
                  False);

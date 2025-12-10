@@ -13,6 +13,7 @@ add_executable(
     src/daemon/utils.c
     src/daemon/nlist.c
     src/daemon/notification.c
+    src/daemon/indicator.c
     src/daemon/server.c
     src/daemon/command.c
     src/protocol.c

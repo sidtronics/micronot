@@ -193,7 +193,7 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
   const char *text_font = NULL;
   const char *indicator = NULL;
   const char *indicator_fg = NULL;
-  int type = -1;
+  // int type = -1;
 
   ProtocolPair pair;
   while (protocol_parse(pbuf, &pair)) {
@@ -204,20 +204,6 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
     if (MATCH(pair.key, UNOT_KEY_TEXT))
       text = pair.val;
 
-    else if (MATCH(pair.key, UNOT_KEY_TYPE)) {
-
-      if (MATCH(pair.val, UNOT_VAL_MESSAGE))
-        type = UNOT_TYPE_MESSAGE;
-      else if (MATCH(pair.val, UNOT_VAL_SPINNER))
-        type = UNOT_TYPE_SPINNER;
-      else {
-        fprintf(stderr,
-                "[unotd:server] ERROR: unknown notification type: '%s'\n",
-                pair.val);
-        return false;
-      }
-    }
-
     else if (MATCH(pair.key, UNOT_KEY_INDICATOR))
       indicator = pair.val;
 
@@ -225,11 +211,12 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
       for (size_t i = 0; i < unotd->config.indicators_count; i++) {
         char *indicator = unotd->config.indicators[i];
         if (MATCH(pair.val, indicator)) {
-          target->indicator = indicator + strlen(indicator) + 1;
+          indicator_init(&target->ind, indicator + strlen(indicator) + 1);
           break;
         }
       }
-      if (!target->indicator)
+
+      if (!target->ind.start)
         fprintf(stderr,
                 "[unotd:server] WARN: indicator of name '%s' not found\n",
                 pair.val);
@@ -263,39 +250,33 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
     return false;
   }
 
-  if (type == -1) {
-    fprintf(stderr, "[unotd:server] ERROR: missing key: '%s'\n", UNOT_KEY_TYPE);
-    return false;
-  }
-
-  if (!indicator && !target->indicator) {
+  if (!indicator && !target->ind.start) {
     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s' or '%s'\n",
             UNOT_KEY_INDICATOR, UNOT_KEY_INDICATOR_NAME);
     return false;
   }
 
-  if (target->indicator)
-    target->text = strdup(text);
+  if (target->ind.start)
+    target->txt = strdup(text);
 
   else {
+
+    if (!indicator_validate(indicator)) {
+      fprintf(stderr, "[unotd:server] ERROR: malformed indicator string\n");
+      return false;
+    }
+
     size_t txt_len = strlen(text) + 1;
     size_t ind_len = strlen(indicator) + 1;
-    target->text = malloc(txt_len + ind_len);
-    memcpy(target->text, text, txt_len);
-    target->indicator = target->text + txt_len;
-    memcpy(target->indicator, indicator, ind_len);
-  }
-
-  target->type = type;
-
-  if (!utils_validate_indicator(target->indicator, target->type)) {
-    fprintf(stderr, "[unotd:server] ERROR: malformed indicator string\n");
-    return false;
+    target->txt = malloc(txt_len + ind_len);
+    memcpy(target->txt, text, txt_len);
+    memcpy(target->txt + txt_len, indicator, ind_len);
+    indicator_init(&target->ind, target->txt + txt_len);
   }
 
   target->txt_font = (void *)text_font;
   target->txt_color = (void *)text_fg;
-  target->ind_color = (void *)indicator_fg;
+  target->ind.color = (void *)indicator_fg;
 
   return true;
 }
@@ -316,13 +297,13 @@ void command_handle(Unotd *unotd, int fd, ProtocolBuffer *pbuf) {
   if (strcmp(pair.key, UNOT_CMD_NOTIFY) == 0) {
 
     node = calloc(1, sizeof(NotificationNode));
-    ASSERT(node && "protocol_handle_command: malloc failed");
+    assert(node && "protocol_handle_command: malloc failed");
     Notification *not = &node->notification;
     not->state = UNOT_NEED_INIT;
     not->timeout = unotd->config.timeout;
 
     if (!_parse_cmd_ntf(unotd, pbuf, not)) {
-      free(not->text);
+      free(not->txt);
       free(node);
       goto ERROR;
     }

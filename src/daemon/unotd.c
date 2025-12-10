@@ -1,12 +1,12 @@
 #include "unotd.h"
 #include "utils.h"
-#include <stdint.h>
 #include <pthread.h>
+#include <stdint.h>
 
 static void _init_notification_resources(Unotd *unotd, Notification *target) {
 
-  utils_resolve_indicator_font(unotd->display, unotd->config.indicator_size,
-                               target);
+  indicator_resolve_font(unotd->display, &target->ind,
+                         unotd->config.indicator_size);
 
   if (target->txt_font) {
 
@@ -15,7 +15,7 @@ static void _init_notification_resources(Unotd *unotd, Notification *target) {
     target->txt_font = XftFontOpenName(
         unotd->display, DefaultScreen(unotd->display), font_name);
 
-    ASSERT(target->txt_font &&
+    assert(target->txt_font &&
            "unotd_allocate_ext_resources: failed to assign txt_font");
   } else {
     target->txt_font = unotd->txt_font;
@@ -30,13 +30,13 @@ static void _init_notification_resources(Unotd *unotd, Notification *target) {
     target->txt_color = &unotd->txt_color;
   }
 
-  if (target->ind_color) {
+  if (target->ind.color) {
 
-    char *ind_color_str = (void *)target->ind_color;
-    target->ind_color =
+    char *ind_color_str = (void *)target->ind.color;
+    target->ind.color =
         utils_allocate_color_s(unotd->display, ind_color_str, NULL);
   } else {
-    target->ind_color = &unotd->ind_color;
+    target->ind.color = &unotd->ind_color;
   }
 }
 
@@ -47,10 +47,10 @@ static void _free_notification_resources(Unotd *unotd, Notification *target) {
   if (target->txt_font != unotd->txt_font)
     XftFontClose(unotd->display, target->txt_font);
 
-  if (target->ind_color != &unotd->ind_color) {
+  if (target->ind.color != &unotd->ind_color) {
     XftColorFree(unotd->display, DefaultVisual(unotd->display, screen),
-                 DefaultColormap(unotd->display, screen), target->ind_color);
-    free(target->ind_color);
+                 DefaultColormap(unotd->display, screen), target->ind.color);
+    free(target->ind.color);
   }
 
   if (target->txt_color != &unotd->txt_color) {
@@ -59,8 +59,8 @@ static void _free_notification_resources(Unotd *unotd, Notification *target) {
     free(target->txt_color);
   }
 
-  XftFontClose(unotd->display, target->ind_font);
-  free(target->text);
+  indicator_free_font(unotd->display, &target->ind);
+  free(target->txt);
 }
 
 void unotd_update_notifications(Unotd *unotd) {
@@ -112,15 +112,15 @@ void unotd_update_notifications(Unotd *unotd) {
 
         unmapped = true;
 
-        switch (ncurr->type) {
+        switch (ncurr->ind.type) {
 
-        case UNOT_TYPE_MESSAGE:
+        case INDICATOR_TYPE_ICON:
           _free_notification_resources(unotd, ncurr);
           notification_close(unotd->display, ncurr);
           nlist_remove(&unotd->open, prev);
           break;
 
-        case UNOT_TYPE_SPINNER:
+        case INDICATOR_TYPE_SPINNER:
           nlist_unlink(&unotd->open, prev);
           nlist_append(&unotd->wait, curr);
           break;

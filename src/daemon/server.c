@@ -1,8 +1,8 @@
 #include "server.h"
 #include "../protocol.h"
 #include "command.h"
-#include "utils.h"
 #include <poll.h>
+#include <assert.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -72,7 +72,7 @@ static int _get_listener() {
 void server_init(Unotd *unotd) {
 
   unotd->listener = _get_listener();
-  ASSERT(unotd->listener && "server_init: failed getting listener");
+  assert(unotd->listener && "server_init: failed getting listener");
   _pollset_init(&unotd->set);
   _pollset_add_pfd(&unotd->set, unotd->listener);
 }

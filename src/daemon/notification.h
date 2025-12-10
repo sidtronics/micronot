@@ -2,14 +2,10 @@
 #define MICRONOT_NOTIFICATION_H
 
 #include "config.h"
+#include "indicator.h"
 #include <X11/Xft/Xft.h>
 #include <X11/Xlib.h>
 #include <stdbool.h>
-
-typedef enum _NotificationType {
-  UNOT_TYPE_MESSAGE,
-  UNOT_TYPE_SPINNER
-} NotificationType;
 
 typedef enum _NotificationState {
   UNOT_NEED_INIT,
@@ -26,19 +22,15 @@ typedef struct _Notification {
 
   XftDraw *draw;
 
-  char *indicator;
-  XftFont *ind_font;
-  XftColor *ind_color;
+  Indicator ind;
   u_int16_t ind_x, ind_y;
 
-  char *text;
+  char *txt;
   XftFont *txt_font;
   XftColor *txt_color;
   u_int16_t txt_x, txt_y;
 
   NotificationState state;
-  NotificationType type;
-  const char *frame;
   unsigned long timeout;
 
   struct timespec start_time;

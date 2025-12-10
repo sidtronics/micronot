@@ -6,7 +6,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-int un_connect(const char *sock_path) {
+int unot_connect(const char *sock_path) {
 
   int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sockfd < 0) {
@@ -28,8 +28,8 @@ int un_connect(const char *sock_path) {
   return sockfd;
 }
 
-NotificationID un_notify(int conn, char *text, NotificationType type,
-                         u_int16_t mask, NotificationAttributes *attrs) {
+NotificationID unot_notify(int conn, char *text, u_int16_t mask,
+                           NotificationAttributes *attrs) {
 
   if (!text || !attrs->indicator)
     return false;
@@ -39,16 +39,6 @@ NotificationID un_notify(int conn, char *text, NotificationType type,
 
   ProtocolAppend(&pbuf, UNOT_CMD_NOTIFY, NULL);
   ProtocolAppend(&pbuf, UNOT_KEY_TEXT, text);
-
-  switch (type) {
-  case UNOT_TYPE_MESSAGE:
-    ProtocolAppend(&pbuf, UNOT_KEY_TYPE, UNOT_VAL_MESSAGE);
-    break;
-
-  case UNOT_TYPE_SPINNER:
-    ProtocolAppend(&pbuf, UNOT_KEY_TYPE, UNOT_VAL_SPINNER);
-    break;
-  }
 
   if (mask & UNIndicator) {
     ProtocolAppend(&pbuf, UNOT_KEY_INDICATOR, attrs->indicator);
@@ -114,7 +104,7 @@ NotificationID un_notify(int conn, char *text, NotificationType type,
 //   return false;
 // }
 
-void un_disconnect(int conn) {
+void unot_disconnect(int conn) {
   if (conn >= 0) {
     if (close(conn) == -1) {
       perror("[unot:client] ERROR: close");

@@ -5,8 +5,8 @@
 
 bool utils_parse_ul(const char *str, unsigned long *res, int base) {
 
-  ASSERT(str && *str && "utils_parse_ul: str is NULL or empty");
-  ASSERT(res && "utils_parse_ul: res is NULL");
+  assert(str && *str && "utils_parse_ul: str is NULL or empty");
+  assert(res && "utils_parse_ul: res is NULL");
 
   char *endptr = NULL;
   errno = 0;
@@ -22,7 +22,7 @@ bool utils_parse_ul(const char *str, unsigned long *res, int base) {
 
 bool utils_parse_u16(const char *str, uint16_t *res, int base) {
 
-  ASSERT(res && "utils_parse_u16: res is NULL");
+  assert(res && "utils_parse_u16: res is NULL");
 
   unsigned long val;
   if (!utils_parse_ul(str, &val, base))
@@ -37,8 +37,8 @@ bool utils_parse_u16(const char *str, uint16_t *res, int base) {
 
 bool utils_parse_dbl(const char *str, double *res) {
 
-  ASSERT(str && *str && "utils_parse_ul: str is NULL or empty");
-  ASSERT(res && "utils_parse_ul: res is NULL");
+  assert(str && *str && "utils_parse_ul: str is NULL or empty");
+  assert(res && "utils_parse_ul: res is NULL");
 
   char *endptr = NULL;
   errno = 0;
@@ -50,74 +50,6 @@ bool utils_parse_dbl(const char *str, double *res) {
 
   *res = val;
   return true;
-}
-
-static const char *_prepare_hints(const char *hints, double size, char *buf,
-                                  size_t len) {
-
-  if (hints && strstr(hints, ":size=")) {
-    return hints;
-  }
-
-  if (!hints || *hints == '\0') {
-    snprintf(buf, len, ":size=%.2f", size);
-  } else {
-    snprintf(buf, len, "%s:size=%.2f", hints, size);
-  }
-
-  return buf;
-}
-
-void utils_resolve_indicator_font(Display *dpy, double size,
-                                  Notification *target) {
-
-  FcCharSet *charset = FcCharSetCreate();
-  FcPattern *pattern, *matched_pattern;
-
-  const char delim = *target->indicator;
-  const char *p = target->indicator + 1;
-  bool traversed_frames = false;
-  while (*p) {
-
-    wchar_t wc;
-    int n = mbtowc(&wc, p, MB_CUR_MAX);
-    ASSERT(n > 0 && "utils_resolve_indicator_font: mbtowc() failed");
-
-    FcCharSetAddChar(charset, (FcChar32)wc);
-    p += n;
-
-    if (*p == delim)
-      p++;
-
-    if (*p == delim) {
-      if (target->type == UNOT_TYPE_MESSAGE || traversed_frames)
-        break;
-      else
-        traversed_frames = true;
-    }
-  }
-
-  ASSERT(*p && "utils_resolve_indicator_font: indicator string malformed");
-
-  char hints_buf[64];
-  const char *hints = _prepare_hints(p + 1, size, hints_buf, sizeof(hints_buf));
-
-  pattern = FcNameParse((FcChar8 *)hints);
-  FcPatternAddCharSet(pattern, FC_CHARSET, charset);
-  FcConfigSubstitute(NULL, pattern, FcMatchPattern);
-  FcDefaultSubstitute(pattern);
-
-  FcResult result;
-  matched_pattern = FcFontMatch(NULL, pattern, &result);
-  // FcPatternPrint(matched_pattern);
-  ASSERT(result == FcResultMatch &&
-         "utils_resolve_indicator_font: failed matching font");
-
-  target->ind_font = XftFontOpenPattern(dpy, matched_pattern);
-  ASSERT(target->ind_font && "utils_resolve_indicator_font: cant open font");
-
-  FcCharSetDestroy(charset);
-  FcPatternDestroy(pattern);
 }
 
 XftColor *utils_allocate_color(Display *dpy, unsigned long color,
@@ -144,7 +76,7 @@ XftColor *utils_allocate_color_s(Display *dpy, const char *color_str,
 
   unsigned long color;
   bool parsed = utils_parse_ul(color_str, &color, 10);
-  ASSERT(parsed && "utils_allocate_color: error parsing color string");
+  assert(parsed && "utils_allocate_color: error parsing color string");
 
   return utils_allocate_color(dpy, color, res);
 }
@@ -156,15 +88,13 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
   unsigned short ind_max_width = 0;
   short ind_max_y = 0;
 
-  const char delim = *target->indicator;
-  const char *p = target->indicator + 1;
-  bool traversed_frames = false;
-  while (*p) {
-
-    const char *end = strchrnul(p, delim);
+  const char delim = *target->ind.start;
+  const char *p = target->ind.start + 1;
+  const char *end;
+  while ((end = strchr(p, delim)) != NULL) {
 
     XGlyphInfo temp;
-    XftTextExtentsUtf8(dpy, target->ind_font, (FcChar8 *)p, (size_t)(end - p),
+    XftTextExtentsUtf8(dpy, target->ind.font, (FcChar8 *)p, (size_t)(end - p),
                        &temp);
 
     if (ind_max_height < temp.height)
@@ -176,25 +106,15 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
     if (ind_max_y < temp.y)
       ind_max_y = temp.y;
 
-    p = end;
-
-    if (*p == delim)
-      p++;
-
-    if (*p == delim) {
-      if (target->type == UNOT_TYPE_MESSAGE || traversed_frames)
-        break;
-      else
-        traversed_frames = true;
-    }
+    p = end + 1;
   }
 
-  ASSERT(*p &&
+  assert(*p &&
          "utils_calculate_notification_layout: malformed indicator string");
 
   XGlyphInfo extents;
-  XftTextExtentsUtf8(dpy, target->txt_font, (FcChar8 *)target->text,
-                     strlen(target->text), &extents);
+  XftTextExtentsUtf8(dpy, target->txt_font, (FcChar8 *)target->txt,
+                     strlen(target->txt), &extents);
 
   u_int16_t x_padding = config->x_padding;
   u_int16_t y_padding = config->y_padding;
@@ -260,67 +180,4 @@ void utils_reposition_notification(Display *dpy, Config *config,
                                             2 * bor_w - y_offset);
     break;
   }
-}
-
-void utils_transform_notification(Notification *target, unsigned long ret) {
-
-  ASSERT(target->type != UNOT_TYPE_MESSAGE &&
-         "utils_transform_notification: incompatible type");
-
-  const char delim = *target->indicator;
-  char *p;
-  for (p = (target->indicator + 1); *p != delim && *p != 0;
-       p = (strchrnul(p, delim) + 1)) {
-  }
-
-  ASSERT(*p && "utils_transform_notification: malformed indicator string");
-
-  if (ret != 0)
-    p = strchrnul(p + 1, delim);
-
-  ASSERT(*p && "utils_transform_notification: malformed indicator string");
-
-  target->indicator = p;
-  target->frame = p + 1;
-  target->type = UNOT_TYPE_MESSAGE;
-  clock_gettime(CLOCK_MONOTONIC, &target->start_time);
-}
-
-bool utils_validate_indicator(const char *indicator, NotificationType type) {
-
-  if (!indicator)
-    return false;
-
-  char delim = *indicator;
-  char separator[3] = {delim, delim, '\0'};
-
-  char *first = strstr(indicator + 1, separator);
-  if (!first)
-    return false;
-
-  const char *last = indicator;
-  const char *curr;
-  do {
-    curr = strchr(last + 1, delim);
-    if (last + 1 == curr) // empty icon/frame
-      return false;
-    last = curr;
-  } while (curr != first);
-
-  if (type == UNOT_TYPE_MESSAGE)
-    return true; // valid icon indicator string
-
-  char *status_delim = strchr(first + 2, delim);
-  if (!status_delim)
-    return false;
-  if (first + 2 == status_delim) // empty success icon
-    return false;
-
-  char *second = strstr(status_delim + 1, separator);
-  if (!second)
-    return false;
-  if (status_delim + 1 == second) // empty fail icon
-    return false;
-
-  return true; // valid spinner indicator string
 }

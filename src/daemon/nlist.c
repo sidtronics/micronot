@@ -1,15 +1,15 @@
 #include "nlist.h"
-#include "utils.h"
+#include <assert.h>
 
 bool nlist_empty(NotificationList *list) {
 
-  ASSERT(list && "nlist_empty: list is NULL");
+  assert(list && "nlist_empty: list is NULL");
   return list->head == NULL;
 }
 
 Notification *nlist_append(NotificationList *list, NotificationNode *node) {
 
-  ASSERT(list && "nlist_append: list is NULL");
+  assert(list && "nlist_append: list is NULL");
 
   NotificationNode *new_node = (node ? node : malloc(sizeof(NotificationNode)));
   new_node->next = NULL;
@@ -29,7 +29,7 @@ Notification *nlist_append(NotificationList *list, NotificationNode *node) {
 
 NotificationNode *nlist_unlink(NotificationList *list, NotificationNode *prev) {
 
-  ASSERT(list && "nlist_unlink: list is NULL");
+  assert(list && "nlist_unlink: list is NULL");
 
   NotificationNode *target = NULL;
 
@@ -65,7 +65,7 @@ void nlist_remove(NotificationList *list, NotificationNode *prev) {
 NotificationNode *nlist_find(NotificationList *list, NotificationNode **prev,
                              Window id) {
 
-  ASSERT("nlist_find: list is NULL");
+  assert("nlist_find: list is NULL");
 
   NotificationNode *previous = NULL;
   NotificationNode *current = list->head;

@@ -3,8 +3,8 @@
 origin = "bottom-right"
 x_padding = 2
 y_padding = 2
-x_offset = 5
-y_offset = 10
+x_offset = 20
+y_offset = 20
 spacing = 5
 border_size = 2
 gap_size = 7
@@ -18,14 +18,14 @@ border_color = "#00FF00"
 
 [indicators]
 
-ascii = $-$/$|$\$$A$B$$
-ascii2 = $[-]$[\]$[|]$[/]$$[O]$[X]$$
-roundy = |||||||||||:style=Bold
-globe = |🌍|🌎|🌏||✔️|✖️||
-bar = |▱▱▱|▰▱▱|▰▰▱|▰▰▰|▰▰▱|▰▱▱|▱▱▱||S|F||
+ascii = s$-$/$|$\$
+ascii2 = s$[-]$[\]$[|]$[/]$
+roundy = s|||||||:style=Bold
+globe = s.🌍.🌎.🌏.
+bar = s|▱▱▱|▰▱▱|▰▰▱|▰▰▰|▰▰▱|▰▱▱|▱▱▱|
 
 [indicators]
 
-abcd = |a|b|c|d|e|f||1|2||
+bulb = i|💡|
 
 # vim: ft=cfg
