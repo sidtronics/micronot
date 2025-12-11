@@ -189,10 +189,7 @@
 bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
 
   const char *text = NULL;
-  const char *text_fg = NULL;
-  const char *text_font = NULL;
   const char *indicator = NULL;
-  const char *indicator_fg = NULL;
 
   ProtocolPair pair;
   while (protocol_parse(pbuf, &pair)) {
@@ -222,13 +219,16 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
     }
 
     else if (MATCH(pair.key, UNOT_KEY_TEXT_FONT))
-      text_font = pair.val;
+      target->txt_font = XftFontOpenName(
+          unotd->display, DefaultScreen(unotd->display), pair.val);
 
     else if (MATCH(pair.key, UNOT_KEY_TEXT_FG))
-      text_fg = pair.val;
+      target->txt_color =
+          utils_allocate_color_s(unotd->display, pair.val, NULL);
 
     else if (MATCH(pair.key, UNOT_KEY_INDICATOR_FG))
-      indicator_fg = pair.val;
+      target->ind.color =
+          utils_allocate_color_s(unotd->display, pair.val, NULL);
 
     else if (MATCH(pair.key, UNOT_KEY_TIMEOUT)) {
       if (!utils_parse_ul(pair.val, &target->timeout, 10)) {
@@ -273,10 +273,8 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
     indicator_init(&target->ind, target->txt + txt_len);
   }
 
-  target->txt_font = XftFontOpenName(unotd->display, DefaultScreen(unotd->display), text_font);
-  target->txt_color = utils_allocate_color_s(unotd->display, text_fg, NULL);
-  target->ind.color = utils_allocate_color_s(unotd->display, indicator_fg, NULL);
-  indicator_resolve_font(unotd->display, &target->ind, unotd->config.indicator_size);
+  indicator_resolve_font(unotd->display, &target->ind,
+                         unotd->config.indicator_size);
 
   return true;
 }
@@ -327,7 +325,6 @@ void command_handle(Unotd *unotd, int fd, ProtocolBuffer *pbuf) {
   }
 
   else if (MATCH(pair.key, UNOT_CMD_MODIFY)) {
-
 
   }
 
