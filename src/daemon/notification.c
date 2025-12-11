@@ -58,10 +58,10 @@ void notification_draw(Display *dpy, Notification *notification) {
 void notification_open(Display *dpy, Config *config,
                        Notification *notification) {
 
-  assert(notification->indicator && "notification_open: indicator not set");
-  assert(notification->ind_font && "notification_open: ind_font not set");
-  assert(notification->ind_color && "notification_open: ind_color not set");
-  assert(notification->text && "notification_open: text not set");
+  assert(notification->ind.start && "notification_open: indicator not set");
+  assert(notification->ind.font && "notification_open: ind_font not set");
+  assert(notification->ind.color && "notification_open: ind_color not set");
+  assert(notification->txt && "notification_open: text not set");
   assert(notification->txt_font && "notification_open: txt_font not set");
   assert(notification->txt_color && "notification_open: txt_color not set");
 
