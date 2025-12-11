@@ -109,9 +109,6 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
     p = end + 1;
   }
 
-  assert(*p &&
-         "utils_calculate_notification_layout: malformed indicator string");
-
   XGlyphInfo extents;
   XftTextExtentsUtf8(dpy, target->txt_font, (FcChar8 *)target->txt,
                      strlen(target->txt), &extents);
