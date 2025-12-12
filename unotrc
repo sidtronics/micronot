@@ -18,14 +18,11 @@ border_color = "#00FF00"
 
 [indicators]
 
-ascii = s$-$/$|$\$
-ascii2 = s$[-]$[\]$[|]$[/]$
-roundy = s|||||||:style=Bold
-globe = s.🌍.🌎.🌏.
-bar = s|▱▱▱|▰▱▱|▰▰▱|▰▰▰|▰▰▱|▰▱▱|▱▱▱|
-
-[indicators]
-
 bulb = i|💡|
+ascii = s.-./.|.\.
+ascii2 = s.[-].[\].[|].[/].
+roundy = s|||||||:style=Bold
+globe = s|🌍|🌎|🌏|
+bar = s|▱▱▱|▰▱▱|▰▰▱|▰▰▰|▰▰▱|▰▱▱|▱▱▱|
 
 # vim: ft=cfg
