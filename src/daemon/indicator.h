@@ -22,8 +22,8 @@ typedef struct _Indicator {
 } Indicator;
 
 void indicator_init(Indicator *ind, char *ind_str);
-void indicator_update(Indicator *ind);
 bool indicator_validate(const char *ind_str);
+size_t indicator_next_frame(Indicator *ind);
 
 void indicator_resolve_font(Display *dpy, Indicator *ind, double size);
 void indicator_free_font(Display *dpy, Indicator *ind);

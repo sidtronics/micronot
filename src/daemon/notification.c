@@ -1,6 +1,6 @@
 #include "notification.h"
-#include <time.h>
 #include <assert.h>
+#include <time.h>
 
 static Window _create_notification_window(Display *dpy, u_int16_t win_x,
                                           u_int16_t win_y, u_int16_t win_w,
@@ -29,7 +29,9 @@ static Window _create_notification_window(Display *dpy, u_int16_t win_x,
   return window;
 }
 
-static void _draw_indicator(Display *dpy, Notification *notification) {
+void notification_draw(Display *dpy, Notification *notification) {
+
+  XClearWindow(dpy, notification->window);
 
   const char delim = *notification->ind.start;
   const char *end = strchr(notification->ind.frame, delim);
@@ -38,13 +40,6 @@ static void _draw_indicator(Display *dpy, Notification *notification) {
                     notification->ind.font, notification->ind_x,
                     notification->ind_y, (FcChar8 *)notification->ind.frame,
                     (size_t)(end - notification->ind.frame));
-}
-
-void notification_draw(Display *dpy, Notification *notification) {
-
-  XClearWindow(dpy, notification->window);
-
-  _draw_indicator(dpy, notification);
 
   XftDrawStringUtf8(notification->draw, notification->txt_color,
                     notification->txt_font, notification->txt_x,
@@ -126,12 +121,15 @@ bool notification_update(Display *dpy, Notification *notification) {
 
     if (elapsed >= 150) {
 
-      indicator_update(&notification->ind);
+      size_t frame_size = indicator_next_frame(&notification->ind);
 
       XClearArea(dpy, notification->window, 0, 0, notification->txt_x, 0,
                  False);
 
-      _draw_indicator(dpy, notification);
+      XftDrawStringUtf8(notification->draw, notification->ind.color,
+                        notification->ind.font, notification->ind_x,
+                        notification->ind_y, (FcChar8 *)notification->ind.frame,
+                        frame_size);
 
       notification->last_time = now;
     }

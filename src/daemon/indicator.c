@@ -11,17 +11,19 @@ void indicator_init(Indicator *ind, char *ind_str) {
   ind->frame = ind_str;
 }
 
-void indicator_update(Indicator *ind) {
+size_t indicator_next_frame(Indicator *ind) {
 
   assert(ind && "indicator_parse: ind");
 
-  if (ind->type == INDICATOR_TYPE_SPINNER) {
-    char delim = *ind->start;
-    ind->frame = strchr(ind->frame, delim);
-    if (strchr(ind->frame + 1, delim) == NULL)
-      ind->frame = ind->start;
-    ind->frame++;
+  char delim = *ind->start;
+  ind->frame = strchr(ind->frame, delim) + 1;
+  char *end = strchr(ind->frame, delim);
+  if (!end) {
+    ind->frame = ind->start + 1;
+    end = strchr(ind->frame, delim);
   }
+
+  return (size_t)(end - ind->frame);
 }
 
 bool indicator_validate(const char *ind_str) {
