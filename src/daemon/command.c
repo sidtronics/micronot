@@ -205,9 +205,9 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
 
     else if (MATCH(pair.key, UNOT_KEY_INDICATOR_NAME)) {
       for (size_t i = 0; i < unotd->config.indicators_count; i++) {
-        char *indicator = unotd->config.indicators[i];
-        if (MATCH(pair.val, indicator)) {
-          indicator_init(&target->ind, indicator + strlen(indicator) + 1);
+        char *indicator_name = unotd->config.indicators[i];
+        if (MATCH(pair.val, indicator_name)) {
+          indicator_init(&target->ind, indicator_name + strlen(indicator_name) + 1);
           break;
         }
       }
