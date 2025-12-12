@@ -29,4 +29,5 @@ include_directories (/usr/include/freetype2)
 target_link_libraries(unotd
     X11
     Xft
-    fontconfig)
+    fontconfig
+)
