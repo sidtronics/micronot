@@ -121,7 +121,7 @@ bool notification_update(Display *dpy, Notification *notification) {
 
     if (elapsed >= 150) {
 
-      size_t frame_size = indicator_next_frame(&notification->ind);
+      size_t frame_size = indicator_next(&notification->ind);
 
       XClearArea(dpy, notification->window, 0, 0, notification->txt_x, 0,
                  False);

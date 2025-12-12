@@ -5,27 +5,25 @@
 #include <stdbool.h>
 
 typedef enum _IndicatorType {
-  INDICATOR_TYPE_ICON = 'i',
-  INDICATOR_TYPE_SPINNER = 's'
+  INDICATOR_TYPE_ICON,
+  INDICATOR_TYPE_SPINNER
 } IndicatorType;
 
 typedef struct _Indicator {
 
   IndicatorType type;
 
-  char *start;
-  char *frame;
+  const char *start;
+  const char *frame;
 
   XftFont *font;
   XftColor *color;
 
 } Indicator;
 
-void indicator_init(Indicator *ind, char *ind_str);
-bool indicator_validate(const char *ind_str);
-size_t indicator_next_frame(Indicator *ind);
-
-void indicator_resolve_font(Display *dpy, Indicator *ind, double size);
-void indicator_free_font(Display *dpy, Indicator *ind);
+void indicator_init(Display *dpy, Indicator *ind, const char *str, double size);
+bool indicator_validate(const char *str);
+size_t indicator_next(Indicator *ind);
+void indicator_free(Display *dpy, Indicator *ind);
 
 #endif

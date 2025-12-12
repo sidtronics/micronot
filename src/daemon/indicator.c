@@ -1,78 +1,31 @@
 #include "indicator.h"
 #include <assert.h>
 
-void indicator_init(Indicator *ind, char *ind_str) {
-
-  assert(ind && "indicator_parse: ind");
-  assert(ind_str && "indicator_parse: ind_str");
-
-  ind->type = *ind_str++;
-  ind->start = ind_str++;
-  ind->frame = ind_str;
-}
-
-size_t indicator_next_frame(Indicator *ind) {
-
-  assert(ind && "indicator_parse: ind");
-
-  char delim = *ind->start;
-  ind->frame = strchr(ind->frame, delim) + 1;
-  char *end = strchr(ind->frame, delim);
-  if (!end) {
-    ind->frame = ind->start + 1;
-    end = strchr(ind->frame, delim);
-  }
-
-  return (size_t)(end - ind->frame);
-}
-
-bool indicator_validate(const char *ind_str) {
-
-  if (!ind_str || !*ind_str)
-    return false;
-
-  char type = *ind_str++;
-  if (strchr("is", type) == NULL)
-    return false;
-
-  const char *delim_prev = ind_str++;
-  char delim = *delim_prev;
-  if (!delim)
-    return false;
-
-  char *delim_next;
-  int frame_count = 0;
-  while ((delim_next = strchr(ind_str, delim))) {
-
-    if (delim_next == delim_prev + 1)
-      return false;
-
-    ind_str = delim_next + 1;
-    delim_prev = delim_next;
-    frame_count++;
-  }
-
-  return frame_count;
-}
-
-void indicator_resolve_font(Display *dpy, Indicator *ind, double size) {
+void indicator_init(Display *dpy, Indicator *ind, const char *str,
+                    double size) {
 
   FcCharSet *charset = FcCharSetCreate();
   FcPattern *pattern, *matched_pattern;
 
-  const char delim = *ind->start;
-  const char *p = ind->start + 1;
-  while (strchr(p, delim) != NULL) {
+  int frame_count = 0;
+  const char delim = *str;
+  const char *p = str + 1;
+
+  while (1) {
 
     wchar_t wc;
     int n = mbtowc(&wc, p, MB_CUR_MAX);
-    assert(n > 0 && "indicator_resolve_font: mbtowc() failed");
+    assert(n > 0 && "indicator_init: mbtowc() failed");
 
     FcCharSetAddChar(charset, (FcChar32)wc);
     p += n;
 
-    if (*p == delim)
+    if (*p == delim) {
       p++;
+      frame_count++;
+      if (strchr(p, delim) == NULL)
+        break;
+    }
   }
 
   char hbuf[64];
@@ -90,16 +43,55 @@ void indicator_resolve_font(Display *dpy, Indicator *ind, double size) {
   FcResult result;
   matched_pattern = FcFontMatch(NULL, pattern, &result);
   // FcPatternPrint(matched_pattern);
-  assert(result == FcResultMatch &&
-         "indicator_resolve_font: failed matching font");
+  assert(result == FcResultMatch && "indicator_init: failed matching font");
 
   ind->font = XftFontOpenPattern(dpy, matched_pattern);
-  assert(ind->font && "indicator_resolve_font: couldn't open font");
+  assert(ind->font && "indicator_init: couldn't open font");
+
+  ind->start = str;
+  ind->frame = str + 1;
+  ind->type = frame_count > 1 ? INDICATOR_TYPE_SPINNER : INDICATOR_TYPE_ICON;
 
   FcCharSetDestroy(charset);
   FcPatternDestroy(pattern);
 }
 
-void indicator_free_font(Display *dpy, Indicator *ind) {
+bool indicator_validate(const char *str) {
+
+  assert(str && "indicator_validate: str");
+
+  if (!*str)
+    return false;
+
+  const char delim = *str;
+  const char *frame_beg = str;
+  const char *frame_end;
+  while ((frame_end = strchr(frame_beg + 1, delim))) {
+
+    if (frame_end == frame_beg + 1)
+      return false;
+
+    frame_beg = frame_end;
+  }
+
+  return frame_beg != str;
+}
+
+size_t indicator_next(Indicator *ind) {
+
+  assert(ind && "indicator_parse: ind");
+
+  const char delim = *ind->start;
+  ind->frame = strchr(ind->frame, delim) + 1;
+  const char *end = strchr(ind->frame, delim);
+  if (!end) {
+    ind->frame = ind->start + 1;
+    end = strchr(ind->frame, delim);
+  }
+
+  return (size_t)(end - ind->frame);
+}
+
+void indicator_free(Display *dpy, Indicator *ind) {
   XftFontClose(dpy, ind->font);
-};
+}

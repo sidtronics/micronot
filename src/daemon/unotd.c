@@ -22,7 +22,7 @@ static void _free_notification_resources(Unotd *unotd, Notification *target) {
     free(target->txt_color);
   }
 
-  indicator_free_font(unotd->display, &target->ind);
+  indicator_free(unotd->display, &target->ind);
   free(target->txt);
 }
 

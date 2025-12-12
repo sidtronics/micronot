@@ -190,6 +190,7 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
 
   const char *text = NULL;
   const char *indicator = NULL;
+  bool name = false;
 
   ProtocolPair pair;
   while (protocol_parse(pbuf, &pair)) {
@@ -207,12 +208,13 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
       for (size_t i = 0; i < unotd->config.indicators_count; i++) {
         char *indicator_name = unotd->config.indicators[i];
         if (MATCH(pair.val, indicator_name)) {
-          indicator_init(&target->ind, indicator_name + strlen(indicator_name) + 1);
+          indicator = indicator_name + strlen(indicator_name) + 1;
+          name = true;
           break;
         }
       }
 
-      if (!target->ind.start)
+      if (!name)
         fprintf(stderr,
                 "[unotd:server] WARN: indicator of name '%s' not found\n",
                 pair.val);
@@ -249,13 +251,13 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
     return false;
   }
 
-  if (!indicator && !target->ind.start) {
+  if (!indicator) {
     fprintf(stderr, "[unotd:server] ERROR: missing key: '%s' or '%s'\n",
             UNOT_KEY_INDICATOR, UNOT_KEY_INDICATOR_NAME);
     return false;
   }
 
-  if (target->ind.start)
+  if (name)
     target->txt = strdup(text);
 
   else {
@@ -269,12 +271,11 @@ bool _parse_cmd_ntf(Unotd *unotd, ProtocolBuffer *pbuf, Notification *target) {
     size_t ind_len = strlen(indicator) + 1;
     target->txt = malloc(txt_len + ind_len);
     memcpy(target->txt, text, txt_len);
-    memcpy(target->txt + txt_len, indicator, ind_len);
-    indicator_init(&target->ind, target->txt + txt_len);
+    indicator = memcpy(target->txt + txt_len, indicator, ind_len);
   }
 
-  indicator_resolve_font(unotd->display, &target->ind,
-                         unotd->config.indicator_size);
+  indicator_init(unotd->display, &target->ind, indicator,
+                 unotd->config.indicator_size);
 
   return true;
 }
