@@ -6,12 +6,19 @@
 
 bool protocol_recv(int fd, ProtocolBuffer *pbuf) {
 
-  char *p = pbuf->buf;
-  size_t bytes_read = 0;
+  char *recv_beg = pbuf->buf;
+  char *recv_end;
   ssize_t n = 0;
-  while (!(p = memchr(p, '\n', n))) {
+  do {
 
-    n = recv(fd, pbuf->buf + bytes_read, pbuf->len - bytes_read, 0);
+    recv_beg += n;
+    size_t rem = (pbuf->buf + pbuf->len) - recv_beg;
+    if (rem == 0) {
+      fprintf(stderr, "[protocol] ERROR: block too large\n");
+      return false;
+    }
+
+    n = recv(fd, recv_beg, rem, 0);
 
     if (n <= 0) {
       if (n < 0)
@@ -20,30 +27,23 @@ bool protocol_recv(int fd, ProtocolBuffer *pbuf) {
         fprintf(stderr, "[protocol] INFO: connection closed by the peer\n");
       return false;
     }
+  } while ((recv_end = memchr(recv_beg, '\n', n)) == NULL);
 
-    p = pbuf->buf + bytes_read;
-    bytes_read += n;
-
-    if (bytes_read == pbuf->len) {
-      fprintf(stderr, "[protocol] ERROR: block too large\n");
-      return false;
-    }
-  }
-
-  *p = 0;
+  *recv_end = 0;
   pbuf->state = pbuf->buf;
   return true;
 }
 
 bool protocol_send(int fd, ProtocolBuffer *pbuf) {
 
-  size_t total_bytes = strnlen(pbuf->buf, pbuf->len - 1);
-  pbuf->buf[total_bytes++] = '\n';
+  size_t bytes = strnlen(pbuf->buf, pbuf->len - 1);
+  pbuf->buf[bytes] = '\n';
+  bytes++;
 
   size_t bytes_sent = 0;
-  while (bytes_sent < total_bytes) {
+  while (bytes_sent < bytes) {
 
-    ssize_t n = send(fd, pbuf->buf + bytes_sent, total_bytes - bytes_sent, 0);
+    ssize_t n = send(fd, pbuf->buf + bytes_sent, bytes - bytes_sent, 0);
 
     if (n <= 0) {
       if (n < 0)
