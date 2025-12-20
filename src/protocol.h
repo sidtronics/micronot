@@ -19,11 +19,8 @@
 #define UNOT_KEY_NOTIF_ID "nid"
 
 typedef struct _ProtocolPair {
-  char *key;
-  union {
-    char *val;
-    unsigned long ul_val;
-  };
+  const char *key;
+  const char *val;
 } ProtocolPair;
 
 typedef struct _ProtocolBuffer {
@@ -32,18 +29,24 @@ typedef struct _ProtocolBuffer {
   size_t len;
 } ProtocolBuffer;
 
+// Protocol parser
+bool protocol_parse(ProtocolBuffer *pbuf, ProtocolPair *pair);
+
+// Protocol builder functions
+bool protocol_begin(ProtocolBuffer *pbuf, char *cmd);
+bool protocol_append_str(ProtocolBuffer *pbuf, const char *key,
+                         const char *val);
+bool protocol_append_ul(ProtocolBuffer *pbuf, const char *key,
+                        unsigned long val);
+
+#define protocol_append(pbuf, key, val)                                        \
+  _Generic(((val) + 0),                                                        \
+      char *: protocol_append_str,                                             \
+      const char *: protocol_append_str,                                       \
+      unsigned long: protocol_append_ul)((pbuf), (key), (val))
+
+// Protocol I/O
 bool protocol_send(int fd, ProtocolBuffer *pbuf);
 bool protocol_recv(int fd, ProtocolBuffer *pbuf);
-bool protocol_parse(ProtocolBuffer *pbuf, ProtocolPair *pair);
-bool protocol_append(ProtocolBuffer *pbuf, ProtocolPair pair, bool ul);
-
-#define ProtocolBufferInit(buf)                                                \
-  {.buf = (buf), .state = (buf), .len = sizeof(buf)}
-
-#define ProtocolAppend(pbuf, k, v)                                             \
-  (protocol_append((pbuf), (ProtocolPair){.key = (k), .val = (v)}, false))
-
-#define ProtocolAppendUL(pbuf, k, v)                                           \
-  (protocol_append((pbuf), (ProtocolPair){.key = (k), .ul_val = (v)}, true))
 
 #endif

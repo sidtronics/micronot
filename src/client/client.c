@@ -35,33 +35,34 @@ NotificationID unot_notify(int conn, char *text, u_int16_t mask,
     return false;
 
   char buf[256];
-  ProtocolBuffer pbuf = ProtocolBufferInit(buf);
+  ProtocolBuffer pbuf = {.buf = buf, .state = buf, .len = sizeof(buf)};
 
-  ProtocolAppend(&pbuf, UNOT_CMD_NOTIFY, NULL);
-  ProtocolAppend(&pbuf, UNOT_KEY_TEXT, text);
+  protocol_begin(&pbuf, UNOT_CMD_NOTIFY);
+
+  protocol_append(&pbuf, UNOT_KEY_TEXT, text);
 
   if (mask & UNIndicator) {
-    ProtocolAppend(&pbuf, UNOT_KEY_INDICATOR, attrs->indicator);
+    protocol_append(&pbuf, UNOT_KEY_INDICATOR, attrs->indicator);
   }
 
   else {
-    ProtocolAppend(&pbuf, UNOT_KEY_INDICATOR_NAME, attrs->indicator);
+    protocol_append(&pbuf, UNOT_KEY_INDICATOR_NAME, attrs->indicator);
   }
 
   if (mask & UNTextFG) {
-    ProtocolAppendUL(&pbuf, UNOT_KEY_TEXT_FG, attrs->text_fg);
+    protocol_append(&pbuf, UNOT_KEY_TEXT_FG, attrs->text_fg);
   }
 
   if (mask & UNIndicatorFG) {
-    ProtocolAppendUL(&pbuf, UNOT_KEY_INDICATOR_FG, attrs->indicator_fg);
+    protocol_append(&pbuf, UNOT_KEY_INDICATOR_FG, attrs->indicator_fg);
   }
 
   if (mask & UNTextFont) {
-    ProtocolAppend(&pbuf, UNOT_KEY_TEXT_FONT, attrs->text_font);
+    protocol_append(&pbuf, UNOT_KEY_TEXT_FONT, attrs->text_font);
   }
 
   if (mask & UNTimeout) {
-    ProtocolAppendUL(&pbuf, UNOT_KEY_TIMEOUT, attrs->timeout);
+    protocol_append(&pbuf, UNOT_KEY_TIMEOUT, attrs->timeout);
   }
 
   if (!protocol_send(conn, &pbuf))

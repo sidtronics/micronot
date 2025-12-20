@@ -320,8 +320,8 @@ void command_handle(Unotd *unotd, int fd, ProtocolBuffer *pbuf) {
     pthread_mutex_unlock(&unotd->nlist_lock);
 
     pbuf->state = pbuf->buf;
-    ProtocolAppend(pbuf, "OK", NULL);
-    ProtocolAppendUL(pbuf, UNOT_KEY_NOTIF_ID, not->window);
+    protocol_begin(pbuf, "OK");
+    protocol_append(pbuf, UNOT_KEY_NOTIF_ID, not->window);
     goto OK;
   }
 
@@ -337,7 +337,7 @@ void command_handle(Unotd *unotd, int fd, ProtocolBuffer *pbuf) {
 
 ERROR:
   pbuf->state = pbuf->buf;
-  ProtocolAppend(pbuf, "ERROR", NULL);
+  protocol_begin(pbuf, "ERROR");
 
 OK:
   protocol_send(fd, pbuf);

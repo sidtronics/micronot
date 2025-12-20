@@ -27,7 +27,10 @@ bool protocol_recv(int fd, ProtocolBuffer *pbuf) {
         fprintf(stderr, "[protocol] INFO: connection closed by the peer\n");
       return false;
     }
-  } while ((recv_end = memchr(recv_beg, '\n', n)) == NULL);
+
+    recv_end = memchr(recv_beg, '\n', n);
+
+  } while (recv_end == NULL);
 
   *recv_end = 0;
   pbuf->state = pbuf->buf;
@@ -36,14 +39,14 @@ bool protocol_recv(int fd, ProtocolBuffer *pbuf) {
 
 bool protocol_send(int fd, ProtocolBuffer *pbuf) {
 
-  size_t bytes = strnlen(pbuf->buf, pbuf->len - 1);
-  pbuf->buf[bytes] = '\n';
-  bytes++;
+  size_t size = strnlen(pbuf->buf, pbuf->len - 1);
+  pbuf->buf[size] = '\n';
+  size++;
 
   size_t bytes_sent = 0;
-  while (bytes_sent < bytes) {
+  while (bytes_sent < size) {
 
-    ssize_t n = send(fd, pbuf->buf + bytes_sent, bytes - bytes_sent, 0);
+    ssize_t n = send(fd, pbuf->buf + bytes_sent, size - bytes_sent, 0);
 
     if (n <= 0) {
       if (n < 0)
@@ -59,30 +62,32 @@ bool protocol_send(int fd, ProtocolBuffer *pbuf) {
   return true;
 }
 
-bool protocol_parse(ProtocolBuffer *pbuf, ProtocolPair *pair) {
+bool protocol_parse_header(ProtocolBuffer *pbuf, const char **cmd) {
+
+  pbuf->state = strchr(pbuf->buf, ' ');
+
+  if (pbuf->state)
+    *pbuf->state++ = '\0';
+
+  *cmd = pbuf->buf;
+  return true;
+}
+
+bool protocol_parse_field(ProtocolBuffer *pbuf, const char **key,
+                          const char **val) {
 
   // TODO: handle '\' as escaping character to allow use of double quotes.
   // TODO: handle empty keys and values.
 
-  if (pbuf->state == pbuf->buf) {
-
-    pbuf->state = strchr(pbuf->buf, ' ');
-
-    if (pbuf->state)
-      *pbuf->state++ = '\0';
-
-    *pair = (ProtocolPair){pbuf->buf, NULL};
-    return true;
-  }
-
   if (!pbuf->state)
     return false;
 
-  pair->key = pbuf->state;
+  *key = pbuf->state;
   pbuf->state = strchr(pbuf->state, ':');
   if (!pbuf->state) {
     fprintf(stderr, "[protocol] ERROR: malformed pair, expected ':'\n");
-    *pair = (ProtocolPair){NULL, NULL};
+    *key = NULL;
+    *val = NULL;
     return true;
   }
 
@@ -90,11 +95,12 @@ bool protocol_parse(ProtocolBuffer *pbuf, ProtocolPair *pair) {
 
   if (*pbuf->state == '"') {
 
-    pair->val = ++pbuf->state;
+    *val = ++pbuf->state;
     pbuf->state = strchr(pbuf->state, '"');
     if (!pbuf->state) {
       fprintf(stderr, "[protocol] ERROR: missing closing '\"''\n");
-      *pair = (ProtocolPair){NULL, NULL};
+      *key = NULL;
+      *val = NULL;
       return true;
     }
 
@@ -102,7 +108,7 @@ bool protocol_parse(ProtocolBuffer *pbuf, ProtocolPair *pair) {
   }
 
   else
-    pair->val = pbuf->state;
+    *val = pbuf->state;
 
   pbuf->state = strchr(pbuf->state, ' ');
   if (pbuf->state)
@@ -111,24 +117,40 @@ bool protocol_parse(ProtocolBuffer *pbuf, ProtocolPair *pair) {
   return true;
 }
 
-bool protocol_append(ProtocolBuffer *pbuf, ProtocolPair pair, bool ul) {
+bool protocol_append_header(ProtocolBuffer *pbuf, char *cmd) {
+
+  pbuf->state = pbuf->buf;
+  int n = snprintf(pbuf->state, pbuf->len, "%s", cmd);
+  if (n < 0 || (size_t)n >= pbuf->len)
+    return false;
+  pbuf->state += n;
+  return true;
+}
+
+bool protocol_append_str(ProtocolBuffer *pbuf, const char *key,
+                         const char *val) {
 
   size_t size = (pbuf->buf + pbuf->len) - pbuf->state;
   int n;
 
-  if (pbuf->state == pbuf->buf)
-    n = snprintf(pbuf->state, size, "%s", pair.key);
+  if (strchr(val, ' '))
+    n = snprintf(pbuf->state, size, " %s:\"%s\"", key, val);
+  else
+    n = snprintf(pbuf->state, size, " %s:%s", key, val);
 
-  else {
-    if (ul)
-      n = snprintf(pbuf->state, size, " %s:%lu", pair.key, pair.ul_val);
-    else {
-      if (strchr(pair.val, ' '))
-        n = snprintf(pbuf->state, size, " %s:\"%s\"", pair.key, pair.val);
-      else
-        n = snprintf(pbuf->state, size, " %s:%s", pair.key, pair.val);
-    }
-  }
+  if (n < 0 || (size_t)n >= size)
+    return false;
+
+  pbuf->state += n;
+  return true;
+}
+
+bool protocol_append_ul(ProtocolBuffer *pbuf, const char *key,
+                        unsigned long val) {
+
+  size_t size = (pbuf->buf + pbuf->len) - pbuf->state;
+
+  int n = snprintf(pbuf->state, size, " %s:%lu", key, val);
 
   if (n < 0 || (size_t)n >= size)
     return false;

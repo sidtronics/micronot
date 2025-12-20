@@ -1,8 +1,8 @@
 #include "server.h"
 #include "../protocol.h"
 #include "command.h"
-#include <poll.h>
 #include <assert.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -96,7 +96,8 @@ void server_process_connections(Unotd *unotd) {
       else {
 
         char buf[256];
-        ProtocolBuffer pbuf = ProtocolBufferInit(buf);
+        ProtocolBuffer pbuf = {.buf = buf, .state = buf, .len = sizeof(buf)};
+
         int fd = set->fds[i].fd;
         if (!protocol_recv(fd, &pbuf)) {
           close(fd);
