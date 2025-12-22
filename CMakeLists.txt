@@ -15,6 +15,7 @@ add_executable(
     src/daemon/notification.c
     src/daemon/indicator.c
     src/daemon/server.c
+    src/daemon/parser.c
     src/daemon/command.c
     src/protocol.c
 )

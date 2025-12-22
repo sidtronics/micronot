@@ -4,24 +4,35 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Commands
-#define UNOT_CMD_NOTIFY "NTF"
-#define UNOT_CMD_MODIFY "MDF"
+// // Commands
+// #define UNOT_CMD_NOTIFY "NTF"
+// #define UNOT_CMD_MODIFY "MDF"
+//
+// // Keys
+// #define UNOT_KEY_TEXT "txt"
+// #define UNOT_KEY_INDICATOR "ind"
+// #define UNOT_KEY_INDICATOR_NAME "nme"
+// #define UNOT_KEY_INDICATOR_FG "ifg"
+// #define UNOT_KEY_TEXT_FG "tfg"
+// #define UNOT_KEY_TEXT_FONT "tfn"
+// #define UNOT_KEY_TIMEOUT "tim"
+// #define UNOT_KEY_NOTIF_ID "nid"
 
-// Keys
-#define UNOT_KEY_TEXT "txt"
-#define UNOT_KEY_INDICATOR "ind"
-#define UNOT_KEY_INDICATOR_NAME "nme"
-#define UNOT_KEY_INDICATOR_FG "ifg"
-#define UNOT_KEY_TEXT_FG "tfg"
-#define UNOT_KEY_TEXT_FONT "tfn"
-#define UNOT_KEY_TIMEOUT "tim"
-#define UNOT_KEY_NOTIF_ID "nid"
+#define UNOT_COMMANDS                                                          \
+  X(UNOT_CMD_NOTIFY, "NTF")                                                    \
+  X(UNOT_CMD_MODIFY, "MDF")
 
-typedef struct _ProtocolPair {
-  const char *key;
-  const char *val;
-} ProtocolPair;
+#define UNOT_FIELDS_STR                                                        \
+  X(UNOT_KEY_TEXT, "txt", text)                                                \
+  X(UNOT_KEY_INDICATOR, "ind", indicator)                                      \
+  X(UNOT_KEY_INDICATOR_NAME, "nme", indicator_name)                            \
+  X(UNOT_KEY_TEXT_FONT, "tfn", text_font)
+
+#define UNOT_FIELDS_UL                                                         \
+  X(UNOT_KEY_NOTIF_ID, "nid", notification_id)                                 \
+  X(UNOT_KEY_INDICATOR_FG, "ifg", indicator_fg)                                \
+  X(UNOT_KEY_TEXT_FG, "tfg", text_fg)                                          \
+  X(UNOT_KEY_TIMEOUT, "tim", timeout)
 
 typedef struct _ProtocolBuffer {
   char *buf;
@@ -30,10 +41,12 @@ typedef struct _ProtocolBuffer {
 } ProtocolBuffer;
 
 // Protocol parser
-bool protocol_parse(ProtocolBuffer *pbuf, ProtocolPair *pair);
+bool protocol_parse_header(ProtocolBuffer *pbuf, const char **cmd);
+bool protocol_parse_field(ProtocolBuffer *pbuf, const char **key,
+                          const char **val);
 
 // Protocol builder functions
-bool protocol_begin(ProtocolBuffer *pbuf, char *cmd);
+bool protocol_append_header(ProtocolBuffer *pbuf, char *cmd);
 bool protocol_append_str(ProtocolBuffer *pbuf, const char *key,
                          const char *val);
 bool protocol_append_ul(ProtocolBuffer *pbuf, const char *key,
