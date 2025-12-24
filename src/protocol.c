@@ -4,6 +4,10 @@
 #include <string.h>
 #include <sys/socket.h>
 
+static inline void _protocol_reset_state(ProtocolBuffer *pbuf) {
+  pbuf->state = pbuf->buf;
+}
+
 bool protocol_recv(int fd, ProtocolBuffer *pbuf) {
 
   char *recv_beg = pbuf->buf;
@@ -33,7 +37,7 @@ bool protocol_recv(int fd, ProtocolBuffer *pbuf) {
   } while (recv_end == NULL);
 
   *recv_end = 0;
-  pbuf->state = pbuf->buf;
+  _protocol_reset_state(pbuf);
   return true;
 }
 
@@ -119,7 +123,7 @@ bool protocol_parse_field(ProtocolBuffer *pbuf, const char **key,
 
 bool protocol_append_header(ProtocolBuffer *pbuf, char *cmd) {
 
-  pbuf->state = pbuf->buf;
+  _protocol_reset_state(pbuf);
   int n = snprintf(pbuf->state, pbuf->len, "%s", cmd);
   if (n < 0 || (size_t)n >= pbuf->len)
     return false;
