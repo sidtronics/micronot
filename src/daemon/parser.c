@@ -1,10 +1,13 @@
 #include "parser.h"
 #include "utils.h"
 
-bool parse_command(ProtocolBuffer *pbuf, Command *cmd) {
+static bool _validate_cmd_notify(Config *cfg, Command *cmd);
+
+bool parse_command(ProtocolBuffer *pbuf, Config *cfg, Command *cmd) {
 
   assert(pbuf && "parse_command: pbuf");
   assert(cmd && "parse_command: cmd");
+  assert(cfg && "parse_command: cfg");
 
   cmd->mask = 0;
   const char *header;
@@ -55,6 +58,55 @@ bool parse_command(ProtocolBuffer *pbuf, Command *cmd) {
       fprintf(stderr, "[unotd:server] ERROR: unknown key: '%s'\n", key);
       return false;
     }
+  }
+
+  // Validation:
+  switch (cmd->kind) {
+
+  case UNOT_CMD_NOTIFY:
+    _validate_cmd_notify(cfg, cmd);
+    break;
+
+  case UNOT_CMD_MODIFY:
+    if (!IS_SET(cmd->mask, UNOT_KEY_NOTIF_ID))
+      return false;
+    break;
+
+  default:
+    assert(0 && "unreachable");
+  }
+
+  return true;
+}
+
+static bool _validate_cmd_notify(Config *cfg, Command *cmd) {
+
+  if (!IS_SET(cmd->mask, UNOT_KEY_TEXT) ||
+      !IS_SET(cmd->mask, UNOT_KEY_INDICATOR))
+    return false;
+
+  switch (indicator_classify(cmd->indicator)) {
+
+  case INDICATOR_STR_RAW:
+    cmd->custom_indicator = true;
+    break;
+
+  case INDICATOR_STR_NAME:
+    if (!indicator_resolve_name(cfg, &cmd->indicator)) {
+      fprintf(stderr,
+              "[unotd:server] ERROR: indicator of name '%s' not found\n",
+              cmd->indicator);
+      return false;
+    }
+    cmd->custom_indicator = false;
+    break;
+
+  case INDICATOR_STR_INVALID:
+    fprintf(stderr, "[unotd:server] ERROR: malformed indicator string\n");
+    return false;
+
+  default:
+    assert(0 && "unreachable");
   }
 
   return true;

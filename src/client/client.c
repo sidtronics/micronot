@@ -24,7 +24,7 @@ typedef struct {
 } UnotAttrsImpl;
 
 _Static_assert(sizeof(UnotAttrs) >= sizeof(UnotAttrsImpl),
-               "UnotAttrs too small");
+               "UnotAttrs not big enough");
 
 UnotConnection unot_connect(const char *sock_path) {
 
@@ -76,8 +76,7 @@ UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs) {
 
   UnotAttrsImpl *_attrs = (UnotAttrsImpl *)attrs;
 
-  if (!(_attrs->mask & UNOT_KEY_TEXT) ||
-      !(_attrs->mask & (UNOT_KEY_INDICATOR | UNOT_KEY_INDICATOR_NAME)))
+  if (!(_attrs->mask & UNOT_KEY_TEXT) || !(_attrs->mask & (UNOT_KEY_INDICATOR)))
     return 0;
 
   char buf[256];
@@ -107,61 +106,6 @@ UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs) {
 
   return 0;
 }
-
-// NotificationID unot_notify(int conn, char *text, u_int16_t mask,
-//                            NotificationAttributes *attrs) {
-//
-//   if (!text || !attrs->indicator)
-//     return false;
-//
-//   char buf[256];
-//   ProtocolBuffer pbuf = {.buf = buf, .state = buf, .len = sizeof(buf)};
-//
-//   protocol_append_header(&pbuf, UNOT_CMD_NOTIFY);
-//
-//   protocol_append(&pbuf, UNOT_KEY_TEXT, text);
-//
-//   if (mask & UNIndicator) {
-//     protocol_append(&pbuf, UNOT_KEY_INDICATOR, attrs->indicator);
-//   }
-//
-//   else {
-//     protocol_append(&pbuf, UNOT_KEY_INDICATOR_NAME, attrs->indicator);
-//   }
-//
-//   if (mask & UNTextFG) {
-//     protocol_append(&pbuf, UNOT_KEY_TEXT_FG, attrs->text_fg);
-//   }
-//
-//   if (mask & UNIndicatorFG) {
-//     protocol_append(&pbuf, UNOT_KEY_INDICATOR_FG, attrs->indicator_fg);
-//   }
-//
-//   if (mask & UNTextFont) {
-//     protocol_append(&pbuf, UNOT_KEY_TEXT_FONT, attrs->text_font);
-//   }
-//
-//   if (mask & UNTimeout) {
-//     protocol_append(&pbuf, UNOT_KEY_TIMEOUT, attrs->timeout);
-//   }
-//
-//   if (!protocol_send(conn, &pbuf))
-//     return 0;
-//
-//   if (!protocol_recv(conn, &pbuf))
-//     return 0;
-//
-//   const char *key;
-//   const char *val;
-//   if (protocol_parse_header(&pbuf, &key) && strcmp(key, "OK") == 0) {
-//     if (protocol_parse_field(&pbuf, &key, &val) &&
-//         strcmp(key, UNOT_KEY_NOTIF_ID) == 0) {
-//       return strtoul(val, NULL, 10);
-//     }
-//   }
-//
-//   return 0;
-// }
 
 void unot_disconnect(UnotConnection conn) {
   if (conn >= 0) {

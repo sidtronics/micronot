@@ -7,7 +7,7 @@
 #include <X11/Xlib.h>
 #include <stdbool.h>
 
-typedef enum _NotificationState {
+typedef enum _NotificationState : u_int16_t {
   UNOT_NEED_INIT,
   UNOT_NEED_REOPEN,
   UNOT_NEED_REDRAW,
@@ -16,39 +16,37 @@ typedef enum _NotificationState {
 
 typedef struct _Notification {
 
-  Window window;
-  u_int16_t win_x, win_y;
-  u_int16_t win_w, win_h;
+  Window window; // 8
+  XftDraw *draw; // 8
 
-  XftDraw *draw;
+  char *txt;           // 8
+  XftFont *txt_font;   // 8
+  XftColor *txt_color; // 8
 
-  Indicator ind;
-  u_int16_t ind_x, ind_y;
+  Indicator ind; // 40
 
-  char *txt;
-  XftFont *txt_font;
-  XftColor *txt_color;
-  u_int16_t txt_x, txt_y;
+  unsigned long timeout;                 // 8
+  struct timespec start_time, last_time; // 16
 
-  NotificationState state;
-  unsigned long timeout;
+  NotificationState state; // 2
+  bool custom_txt_font;    // 1
+  bool custom_txt_color;   // 1
 
-  struct timespec start_time;
-  struct timespec last_time;
+  u_int16_t txt_x, txt_y; // 4
+
+  u_int16_t win_x, win_y; // 4
+  u_int16_t win_w, win_h; // 4
 
 } Notification;
 
+typedef Window NotificationID;
+
 void notification_open(Display *dpy, Config *config,
                        Notification *notification);
-
 void notification_map(Display *dpy, Notification *notification);
-
 void notification_draw(Display *dpy, Notification *notification);
-
 void notification_move(Display *dpy, Notification *notification);
-
 bool notification_update(Display *dpy, Notification *notification);
-
 void notification_close(Display *dpy, Notification *notification);
 
 #endif

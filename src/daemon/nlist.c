@@ -63,7 +63,7 @@ void nlist_remove(NotificationList *list, NotificationNode *prev) {
 }
 
 NotificationNode *nlist_find(NotificationList *list, NotificationNode **prev,
-                             Window id) {
+                             NotificationID id) {
 
   assert("nlist_find: list is NULL");
 

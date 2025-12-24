@@ -88,8 +88,8 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
   unsigned short ind_max_width = 0;
   short ind_max_y = 0;
 
-  const char delim = *target->ind.start;
-  const char *p = target->ind.start + 1;
+  const char delim = *target->ind.str;
+  const char *p = target->ind.str + 1;
   const char *end;
   while ((end = strchr(p, delim)) != NULL) {
 
@@ -124,8 +124,8 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
   target->win_w = ind_w + spacing + txt_w + x_padding * 2;
   target->win_h = max_h + y_padding * 2;
 
-  target->ind_x = x_padding;
-  target->ind_y = ind_max_y + (target->win_h - ind_max_height) / 2;
+  target->ind.x = x_padding;
+  target->ind.y = ind_max_y + (target->win_h - ind_max_height) / 2;
 
   target->txt_x = x_padding + ind_w + spacing;
   target->txt_y = extents.y + (target->win_h - extents.height) / 2;
@@ -133,48 +133,34 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
 
 void utils_reposition_notification(Display *dpy, Config *config,
                                    Notification *prev, Notification *target) {
-
   Screen *screen = DefaultScreenOfDisplay(dpy);
 
-  u_int16_t bor_w = config->border_size;
-  u_int16_t gap_size = config->gap_size;
-  u_int16_t x_offset = config->x_offset;
-  u_int16_t y_offset = config->y_offset;
+  const u_int16_t bor = config->border_size;
+  const u_int16_t gap = config->gap_size;
+  const u_int16_t x_off = config->x_offset;
+  const u_int16_t y_off = config->y_offset;
+  const u_int16_t bw = 2 * bor;
 
+  /* horizontal placement */
+  if (config->origin == UNOT_ORIGIN_TOP_RIGHT ||
+      config->origin == UNOT_ORIGIN_BOTTOM_RIGHT) {
+    target->win_x = screen->width - target->win_w - bw - x_off;
+  } else {
+    target->win_x = x_off;
+  }
+
+  /* vertical placement */
   switch (config->origin) {
 
   case UNOT_ORIGIN_TOP_RIGHT:
-    target->win_x = screen->width - target->win_w - 2 * bor_w - x_offset;
-    target->win_y =
-        prev
-            ? (target->win_y = prev->win_y + prev->win_h + 2 * bor_w + gap_size)
-            : y_offset;
-
-    break;
-
   case UNOT_ORIGIN_TOP_LEFT:
-    target->win_x = x_offset;
-    target->win_y =
-        prev
-            ? (target->win_y = prev->win_y + prev->win_h + 2 * bor_w + gap_size)
-            : y_offset;
+    target->win_y = prev ? prev->win_y + prev->win_h + bw + gap : y_off;
     break;
 
   case UNOT_ORIGIN_BOTTOM_RIGHT:
-    target->win_x = screen->width - target->win_w - 2 * bor_w - x_offset;
-    target->win_y = prev ? (target->win_y = prev->win_y - gap_size -
-                                            target->win_h - 2 * bor_w)
-                         : (target->win_y = screen->height - target->win_h -
-                                            2 * bor_w - y_offset);
-
-    break;
-
   case UNOT_ORIGIN_BOTTOM_LEFT:
-    target->win_x = x_offset;
-    target->win_y = prev ? (target->win_y = prev->win_y - gap_size -
-                                            target->win_h - 2 * bor_w)
-                         : (target->win_y = screen->height - target->win_h -
-                                            2 * bor_w - y_offset);
+    target->win_y = prev ? prev->win_y - gap - target->win_h - bw
+                         : screen->height - target->win_h - bw - y_off;
     break;
   }
 }

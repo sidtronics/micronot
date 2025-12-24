@@ -3,29 +3,6 @@
 #include <pthread.h>
 #include <stdint.h>
 
-static void _free_notification_resources(Unotd *unotd, Notification *target) {
-
-  int screen = DefaultScreen(unotd->display);
-
-  if (target->txt_font != unotd->txt_font)
-    XftFontClose(unotd->display, target->txt_font);
-
-  if (target->ind.color != &unotd->ind_color) {
-    XftColorFree(unotd->display, DefaultVisual(unotd->display, screen),
-                 DefaultColormap(unotd->display, screen), target->ind.color);
-    free(target->ind.color);
-  }
-
-  if (target->txt_color != &unotd->txt_color) {
-    XftColorFree(unotd->display, DefaultVisual(unotd->display, screen),
-                 DefaultColormap(unotd->display, screen), target->txt_color);
-    free(target->txt_color);
-  }
-
-  indicator_free(unotd->display, &target->ind);
-  free(target->txt);
-}
-
 void unotd_update_notifications(Unotd *unotd) {
 
   bool needs_reposition = false;
@@ -75,7 +52,6 @@ void unotd_update_notifications(Unotd *unotd) {
         switch (ncurr->ind.type) {
 
         case INDICATOR_TYPE_ICON:
-          _free_notification_resources(unotd, ncurr);
           notification_close(unotd->display, ncurr);
           nlist_remove(&unotd->open, prev);
           break;
