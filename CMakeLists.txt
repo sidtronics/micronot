@@ -5,10 +5,8 @@ project(micronot VERSION 0.1)
 # clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-add_executable(
-    unotd
+add_executable(unotd
     src/daemon/main.c
-    src/daemon/unotd.c
     src/daemon/config.c
     src/daemon/utils.c
     src/daemon/nlist.c

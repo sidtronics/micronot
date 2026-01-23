@@ -1,8 +1,10 @@
 #include "server.h"
 #include "../protocol.h"
 #include "command.h"
+#include "utils.h"
 #include <assert.h>
 #include <poll.h>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -69,24 +71,90 @@ static int _get_listener() {
   return sockfd;
 }
 
-void server_init(Unotd *unotd) {
+void server_init(ServerCtx *sctx) {
 
-  unotd->listener = _get_listener();
-  assert(unotd->listener && "server_init: failed getting listener");
-  _pollset_init(&unotd->set);
-  _pollset_add_pfd(&unotd->set, unotd->listener);
+  sctx->listener = _get_listener();
+  assert(sctx->listener && "server_init: failed getting listener");
+  _pollset_init(&sctx->set);
+  _pollset_add_pfd(&sctx->set, sctx->listener);
 }
 
-void server_process_connections(Unotd *unotd) {
+void server_update_notifications(ServerCtx *sctx) {
 
-  PollSet *set = &unotd->set;
+  bool needs_reposition = false;
+  NotificationNode *prev = NULL;
+  NotificationNode *curr = sctx->open.head;
+  while (curr) {
+
+    Notification *nprev = prev ? &prev->notification : NULL;
+    Notification *ncurr = &curr->notification;
+
+    switch (ncurr->state) {
+
+    case UNOT_NEED_INIT:
+      utils_calculate_notification_layout(sctx->display, &sctx->config, ncurr);
+      utils_reposition_notification(sctx->display, &sctx->config, nprev, ncurr);
+      notification_open(sctx->display, &sctx->config, ncurr);
+      pthread_cond_signal(&sctx->notif_open);
+      ncurr->state = UNOT_NEED_UPDATE;
+      break;
+
+    case UNOT_NEED_REDRAW:
+      needs_reposition = true;
+    case UNOT_NEED_REOPEN:
+      utils_reposition_notification(sctx->display, &sctx->config, nprev, ncurr);
+      notification_move(sctx->display, ncurr);
+      notification_map(sctx->display, ncurr);
+      notification_draw(sctx->display, ncurr);
+      ncurr->state = UNOT_NEED_UPDATE;
+      break;
+
+    case UNOT_NEED_UPDATE:
+
+      if (needs_reposition) {
+
+        utils_reposition_notification(sctx->display, &sctx->config, nprev,
+                                      ncurr);
+        notification_move(sctx->display, ncurr);
+      }
+
+      if (notification_update(sctx->display, ncurr) == 0) {
+
+        needs_reposition = true;
+
+        switch (ncurr->ind.type) {
+
+        case INDICATOR_TYPE_ICON:
+          notification_close(sctx->display, ncurr);
+          nlist_remove(&sctx->open, prev);
+          break;
+
+        case INDICATOR_TYPE_SPINNER:
+          nlist_unlink(&sctx->open, prev);
+          nlist_append(&sctx->wait, curr);
+          break;
+        }
+
+        curr = prev ? prev->next : sctx->open.head;
+        continue;
+      }
+    }
+
+    prev = curr;
+    curr = curr->next;
+  }
+}
+
+void server_process_connections(ServerCtx *sctx) {
+
+  PollSet *set = &sctx->set;
 
   for (int i = 0; i < set->count; i++) {
 
     if (set->fds[i].revents & (POLLIN | POLLHUP)) {
 
-      if (set->fds[i].fd == unotd->listener) {
-        int newfd = accept(unotd->listener, NULL, NULL);
+      if (set->fds[i].fd == sctx->listener) {
+        int newfd = accept(sctx->listener, NULL, NULL);
         if (newfd == -1) {
           // TODO
         }
@@ -106,7 +174,7 @@ void server_process_connections(Unotd *unotd) {
           continue;
         }
 
-        command_handle(unotd, fd, &pbuf);
+        command_handle(sctx, fd, &pbuf);
       }
     }
   }
