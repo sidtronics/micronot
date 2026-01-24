@@ -10,7 +10,7 @@
 + Empty frames are not valid.
 + The delimiter may be any single-byte character that does not appear in either a frame or the hints string. Choose it accordingly.
 + Indicator appearance can be tweaked using hints, which follow the Fontconfig pattern-string format. Hints are optional.
-+ All used character glyphs must be available in the same font. Otherwise, some characters may fail to render.
++ All used character glyphs must be available in a single font. Otherwise, some characters may fail to render.
 + Atleast one properly delimited frame must be present for Indicator string to be valid.
 
 ### Examples
@@ -30,7 +30,7 @@ $-$/$|$\$
 <delimiter><delimiter><name><delimiter><delimiter>
 ```
 
-+ Use this format to use indicators saved in the config file.
++ Use this format to refer an indicator saved in the config file.
 + Name cannot be empty.
 
 ### Examples

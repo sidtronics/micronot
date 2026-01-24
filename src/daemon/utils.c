@@ -71,14 +71,11 @@ XftColor *utils_allocate_color(Display *dpy, unsigned long color,
   return res;
 }
 
-XftColor *utils_allocate_color_s(Display *dpy, const char *color_str,
-                                 XftColor *res) {
+void utils_deallocate_color(Display *dpy, XftColor *color) {
 
-  unsigned long color;
-  bool parsed = utils_parse_ul(color_str, &color, 10);
-  assert(parsed && "utils_allocate_color: error parsing color string");
-
-  return utils_allocate_color(dpy, color, res);
+  XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+               DefaultColormap(dpy, DefaultScreen(dpy)), color);
+  free(color);
 }
 
 void utils_calculate_notification_layout(Display *dpy, Config *config,

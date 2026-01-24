@@ -1,15 +1,10 @@
 #ifndef MICRONOT_SERVER_H
 #define MICRONOT_SERVER_H
 
+#include "../hf.h"
 #include "nlist.h"
-#define UNOT_MIN_PFDS 10
+#define UNOT_MAX_CONNECTIONS 10
 #define UNOT_SOCK_PATH "/tmp/unotd.sock"
-
-typedef struct _PollSet {
-  struct pollfd *fds;
-  size_t capacity;
-  size_t count;
-} PollSet;
 
 typedef struct _ServerCtx {
 
@@ -17,8 +12,8 @@ typedef struct _ServerCtx {
 
   Config config;
 
-  int listener;
-  PollSet set;
+  struct pollfd pfds[1 + UNOT_MAX_CONNECTIONS]; // First element stores listener
+  hf_context ctxs[UNOT_MAX_CONNECTIONS];
 
   XftFont *txt_font;
   XftColor txt_color;
@@ -34,7 +29,7 @@ typedef struct _ServerCtx {
 } ServerCtx;
 
 void server_init(ServerCtx *sctx);
-void server_update_notifications(ServerCtx *sctx);
 void server_process_connections(ServerCtx *sctx);
+void server_update_notifications(ServerCtx *sctx);
 
 #endif

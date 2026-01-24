@@ -5,6 +5,7 @@ project(micronot VERSION 0.1)
 # clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
+# unotd
 add_executable(unotd
     src/daemon/main.c
     src/daemon/config.c
@@ -13,17 +14,14 @@ add_executable(unotd
     src/daemon/notification.c
     src/daemon/indicator.c
     src/daemon/server.c
-    src/daemon/parser.c
     src/daemon/command.c
-    src/protocol.c
+)
+
+set_property(TARGET unotd PROPERTY
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
 )
 
 target_compile_options(unotd PRIVATE -Wall -Wextra)
-
-add_library(unotclient SHARED src/client/client.c src/protocol.c)
-target_include_directories(unotclient
-    PUBLIC ${PROJECT_SOURCE_DIR}/include/
-)
 
 include_directories (/usr/include/freetype2)
 
@@ -31,4 +29,13 @@ target_link_libraries(unotd
     X11
     Xft
     fontconfig
+)
+
+# unotclient
+add_library(unotclient SHARED src/client/client.c)
+
+target_compile_options(unotclient PRIVATE -Wall -Wextra)
+
+target_include_directories(unotclient
+    PUBLIC ${PROJECT_SOURCE_DIR}/include/
 )

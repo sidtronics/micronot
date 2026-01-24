@@ -1,35 +1,36 @@
-#include "../protocol.h"
 #include <assert.h>
 #include <micronot/client.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
-typedef enum {
-#define X(a, b, c) a = 1u << __COUNTER__,
-  UNOT_FIELDS_STR UNOT_FIELDS_UL
-#undef X
-} KeyMask;
+#include "../hf_defs.h"
+#define HF_IMPLEMENTATION
+#include "../hf.h"
 
-typedef struct {
-#define X(a, b, c) const char *c;
-  UNOT_FIELDS_STR
-#undef X
-#define X(a, b, c) unsigned long c;
-  UNOT_FIELDS_UL
-#undef X
-  KeyMask mask;
-} UnotAttrsImpl;
-
-_Static_assert(sizeof(UnotAttrs) >= sizeof(UnotAttrsImpl),
+_Static_assert(sizeof(UnotAttrs) >= sizeof(hf_message),
                "UnotAttrs not big enough");
+
+#define X(String, FlagIdentifier, Type, Name)                                  \
+  void unot_attr_set_##Name(UnotAttrs *attrs, Type value) {                    \
+    hf_message_set_field_##Name((hf_message *)attrs, value);                   \
+  }                                                                            \
+                                                                               \
+  void unot_attr_clear_##Name(UnotAttrs *attrs) {                              \
+    hf_message_clear_field_##Name((hf_message *)attrs);                        \
+  }
+HF_FIELDS
+#undef X
+
+void unot_attr_clear(UnotAttrs *attrs) {
+  hf_message_clear_fields((hf_message *)attrs);
+}
 
 UnotConnection unot_connect(const char *sock_path) {
 
-  int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (sockfd < 0) {
+  int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (fd < 0) {
     perror("[unot:client] ERROR: socket");
     return -1;
   }
@@ -38,72 +39,55 @@ UnotConnection unot_connect(const char *sock_path) {
   addr.sun_family = AF_UNIX;
   strncpy(addr.sun_path, sock_path, sizeof(addr.sun_path) - 1);
 
-  if (connect(sockfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) ==
-      -1) {
+  if (connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) == -1) {
     perror("[unot:client] ERROR: connect");
-    close(sockfd);
+    close(fd);
     return -1;
   }
 
-  return sockfd;
-}
-
-#define X(a, b, c)                                                             \
-  void unot_attr_set_##c(UnotAttrs *attrs, const char *value) {                \
-    UnotAttrsImpl *_attrs = (UnotAttrsImpl *)attrs;                            \
-    _attrs->c = value;                                                         \
-    _attrs->mask |= a;                                                         \
-  }
-UNOT_FIELDS_STR
-#undef X
-
-#define X(a, b, c)                                                             \
-  void unot_attr_set_##c(UnotAttrs *attrs, unsigned long value) {              \
-    UnotAttrsImpl *_attrs = (UnotAttrsImpl *)attrs;                            \
-    _attrs->c = value;                                                         \
-    _attrs->mask |= a;                                                         \
-  }
-UNOT_FIELDS_UL
-#undef X
-
-void unot_attr_reset(UnotAttrs *attrs) {
-
-  UnotAttrsImpl *_attrs = (UnotAttrsImpl *)attrs;
-  _attrs->mask = 0;
+  return fd;
 }
 
 UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs) {
 
-  UnotAttrsImpl *_attrs = (UnotAttrsImpl *)attrs;
+  hf_message *msg = (hf_message *)attrs;
+  hf_context ctx = {0};
 
-  if (!(_attrs->mask & UNOT_KEY_TEXT) || !(_attrs->mask & (UNOT_KEY_INDICATOR)))
+  if (!hf_message_mask_has_all(msg, UNOT_F_TEXT | UNOT_F_INDICATOR))
     return 0;
 
-  char buf[256];
-  ProtocolBuffer pbuf = {.buf = buf, .state = buf, .len = sizeof(buf)};
-  protocol_append_header(&pbuf, "NTF");
+  hf_message_set_header(msg, UNOT_H_NOTIFY);
 
-#define X(a, b, c)                                                             \
-  if (_attrs->mask & a)                                                        \
-    protocol_append(&pbuf, b, _attrs->c);
-  UNOT_FIELDS_STR
-  UNOT_FIELDS_UL
-#undef X
-
-  if (!protocol_send(conn, &pbuf))
+  if (!hf_message_build(&ctx, msg)) {
+    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
     return 0;
+  }
 
-  if (!protocol_recv(conn, &pbuf))
+  if (!hf_message_send_sync(conn, &ctx)) {
+    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
     return 0;
+  }
 
-  const char *key;
-  const char *val;
-  if (protocol_parse_header(&pbuf, &key) && strcmp(key, "OK") == 0) {
-    if (protocol_parse_field(&pbuf, &key, &val) && strcmp(key, "nid") == 0) {
-      return strtoul(val, NULL, 10);
+  if (!hf_message_recv_sync(conn, &ctx)) {
+    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
+    return 0;
+  }
+
+  uint16_t saved = msg->_mask;
+
+  if (!hf_message_parse(&ctx, msg)) {
+    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
+    return 0;
+  }
+
+  if (hf_message_get_header(msg) == UNOT_H_OK) {
+    if (hf_message_has_field_id(msg)) {
+      msg->_mask = saved;
+      return hf_message_get_field_id(msg);
     }
   }
 
+  msg->_mask = saved;
   return 0;
 }
 

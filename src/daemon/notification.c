@@ -1,4 +1,5 @@
 #include "notification.h"
+#include "utils.h"
 #include <assert.h>
 #include <time.h>
 
@@ -94,16 +95,14 @@ void notification_close(Display *dpy, Notification *notification) {
   if (notification->custom_txt_font)
     XftFontClose(dpy, notification->txt_font);
 
-  if (notification->custom_txt_color) {
-    XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
-                 DefaultColormap(dpy, DefaultScreen(dpy)),
-                 notification->txt_color);
-    free(notification->txt_color);
-  }
+  if (notification->custom_txt_color)
+    utils_deallocate_color(dpy, notification->txt_color);
+
+  if (notification->ind.custom_color)
+    utils_deallocate_color(dpy, notification->ind.color);
 
   free(notification->txt);
-
-  indicator_free(dpy, &notification->ind);
+  indicator_free_str(dpy, &notification->ind);
 }
 
 bool notification_update(Display *dpy, Notification *notification) {

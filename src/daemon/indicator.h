@@ -33,11 +33,12 @@ typedef struct _Indicator {
 
 } Indicator;
 
-IndicatorString indicator_classify(const char *str);
-bool indicator_validate_str(const char *str);
-bool indicator_resolve_name(Config *config, const char **str);
-void indicator_init(Display *dpy, Indicator *ind, double size);
+bool indicator_validate_raw_str(const char *str);
+bool indicator_validate_name_str(const char *str);
+IndicatorString indicator_validate(const char *str);
+
+bool indicator_init_str(Display *dpy, Config *config, Indicator *ind, const char *str);
 size_t indicator_step_frame(Indicator *ind);
-void indicator_free(Display *dpy, Indicator *ind);
+void indicator_free_str(Display *dpy, Indicator *ind);
 
 #endif

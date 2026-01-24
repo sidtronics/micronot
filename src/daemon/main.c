@@ -9,9 +9,10 @@ void *handle_server(void *arg) {
   ServerCtx *sctx = (ServerCtx *)arg;
 
   while (1) {
-    int poll_count = poll(sctx->set.fds, sctx->set.count, -1);
 
-    if (poll_count == -1) {
+    int count = poll(sctx->pfds, UNOT_MAX_CONNECTIONS, -1);
+
+    if (count == -1) {
       perror("poll");
       exit(1);
     }

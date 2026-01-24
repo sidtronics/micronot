@@ -1,28 +1,7 @@
 #include "indicator.h"
 #include <assert.h>
 
-IndicatorString indicator_classify(const char *str) {
-
-  assert(str && "indicator_classify: str");
-
-  if (indicator_validate_str(str))
-    return INDICATOR_STR_RAW;
-
-  else if (*str && str[1] == str[0]) {
-
-    const char *end = strstr(str + 2, (const char[]){str[0], str[0], '\0'});
-
-    if (!end || end == str + 2 || end[2] != '\0')
-      return INDICATOR_STR_INVALID;
-
-    return INDICATOR_STR_NAME;
-  }
-
-  else
-    return INDICATOR_STR_INVALID;
-}
-
-bool indicator_validate_str(const char *str) {
+bool indicator_validate_raw_str(const char *str) {
 
   assert(str && "indicator_validate: str");
 
@@ -43,37 +22,84 @@ bool indicator_validate_str(const char *str) {
   return frame_beg != str;
 }
 
-bool indicator_resolve_name(Config *config, const char **str) {
+bool indicator_validate_name_str(const char *str) {
 
-  assert(str && *str && "indicator_resolve_name: str");
+  assert(str && "indicator_validate: str");
+
+  if (!*str || str[1] != str[0])
+    return false;
+
+  const char *end = strstr(str + 2, (const char[]){str[0], str[0], '\0'});
+
+  if (!end || end == str + 2 || end[2] != '\0')
+    return false;
+
+  return true;
+}
+
+IndicatorString indicator_validate(const char *str) {
+
+  assert(str && "indicator_classify: str");
+
+  if (indicator_validate_raw_str(str))
+    return INDICATOR_STR_RAW;
+
+  else if (indicator_validate_name_str(str))
+    return INDICATOR_STR_NAME;
+
+  else
+    return INDICATOR_STR_INVALID;
+}
+
+const char* indicator_resolve_name(Config *config, const char *name_str) {
+
+  assert(name_str && "indicator_resolve_name: name_str");
   assert(config && "indicator_resolve_name: config");
 
-  const char delim = (*str)[0];
-  const char *name = *str + 2;
-  const char *end = strstr(*str + 2, (const char[]){delim, delim, '\0'});
-  size_t name_len = (size_t)(end - name);
+  const char delim = *name_str;
+  const char *name_beg = name_str + 2;
+  const char *name_end = strstr(name_beg, (const char[]){delim, delim, '\0'});
+  size_t name_len = (size_t)(name_end - name_beg);
 
   for (size_t i = 0; i < config->indicators_count; i++) {
     const char *indicator_name = config->indicators[i];
-    if (strncmp(indicator_name, name, name_len) == 0 &&
+    if (strncmp(indicator_name, name_beg, name_len) == 0 &&
         indicator_name[name_len] == '\0') {
-      *str = indicator_name + name_len + 1;
-      return true;
+      return indicator_name + name_len + 1;
     }
   }
 
-  return false;
+  return NULL;
 }
 
-void indicator_init(Display *dpy, Indicator *ind, double size) {
+bool indicator_init_str(Display *dpy, Config *config, Indicator *ind, const char *str) {
+
+  switch (indicator_validate(str)) {
+
+      case INDICATOR_STR_RAW:
+          ind->str = strdup(str);
+          ind->custom_string = true;
+          break;
+
+      case INDICATOR_STR_NAME:
+          ind->str = indicator_resolve_name(config, str);
+          if (!ind->str) return false;
+          ind->custom_string = false;
+          break;
+
+      case INDICATOR_STR_INVALID:
+          return false;
+
+      default:
+          assert(0 && "unreachable");
+  }
 
   FcCharSet *charset = FcCharSetCreate();
   FcPattern *pattern, *matched_pattern;
 
   int frame_count = 0;
-  const char *str = ind->str;
-  const char delim = *str;
-  const char *p = str + 1;
+  const char delim = *ind->str;
+  const char *p = ind->str + 1;
 
   while (1) {
 
@@ -92,31 +118,26 @@ void indicator_init(Display *dpy, Indicator *ind, double size) {
     }
   }
 
-  char hbuf[64];
-  const char *hints = hbuf;
-  if (strstr(p, ":size="))
-    hints = p;
-  else
-    snprintf(hbuf, sizeof(hbuf), "%s:size=%.2f", p, size);
-
-  pattern = FcNameParse((FcChar8 *)hints);
+  pattern = FcNameParse((FcChar8 *)p);
+  FcPatternAddDouble(pattern, FC_SIZE, config->indicator_size);
   FcPatternAddCharSet(pattern, FC_CHARSET, charset);
   FcConfigSubstitute(NULL, pattern, FcMatchPattern);
   FcDefaultSubstitute(pattern);
 
   FcResult result;
   matched_pattern = FcFontMatch(NULL, pattern, &result);
-  // FcPatternPrint(matched_pattern);
   assert(result == FcResultMatch && "indicator_init: failed matching font");
 
   ind->font = XftFontOpenPattern(dpy, matched_pattern);
   assert(ind->font && "indicator_init: couldn't open font");
 
-  ind->frame = str + 1;
+  ind->frame = ind->str + 1;
   ind->type = frame_count > 1 ? INDICATOR_TYPE_SPINNER : INDICATOR_TYPE_ICON;
 
   FcCharSetDestroy(charset);
   FcPatternDestroy(pattern);
+
+  return true;
 }
 
 size_t indicator_step_frame(Indicator *ind) {
@@ -134,16 +155,11 @@ size_t indicator_step_frame(Indicator *ind) {
   return (size_t)(end - ind->frame);
 }
 
-void indicator_free(Display *dpy, Indicator *ind) {
+void indicator_free_str(Display *dpy, Indicator *ind) {
 
-  XftFontClose(dpy, ind->font);
+  if (ind->font)
+    XftFontClose(dpy, ind->font);
 
   if (ind->custom_string)
     free((void *)ind->str);
-
-  if (ind->custom_color) {
-    XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
-                 DefaultColormap(dpy, DefaultScreen(dpy)), ind->color);
-    free(ind->color);
-  }
 }

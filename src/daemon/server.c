@@ -1,5 +1,3 @@
-#include "server.h"
-#include "../protocol.h"
 #include "command.h"
 #include "utils.h"
 #include <assert.h>
@@ -9,43 +7,31 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-static void _pollset_init(PollSet *set) {
+#include "../hf_defs.h"
+#define HF_IMPLEMENTATION
+#include "server.h"
 
-  set->fds = malloc(sizeof(struct pollfd) * UNOT_MIN_PFDS);
-  set->capacity = UNOT_MIN_PFDS;
-  set->count = 0;
-}
+static bool _alloc_connection(ServerCtx *sctx, int fd) {
 
-static void _pollset_add_pfd(PollSet *set, int newfd) {
-
-  if (set->count == set->capacity) {
-    set->capacity *= 2;
-    set->fds = realloc(set->fds, sizeof(struct pollfd) * set->capacity);
+  for (int i = 0; i < UNOT_MAX_CONNECTIONS; i++) {
+    if (sctx->pfds[i + 1].fd == -1) {
+      sctx->pfds[i + 1] =
+          (struct pollfd){.fd = fd, .events = POLLIN, .revents = 0};
+      hf_clear_error(&sctx->ctxs[i]);
+      hf_clear_buffer(&sctx->ctxs[i]);
+      return true;
+    }
   }
 
-  set->fds[set->count] =
-      (struct pollfd){.fd = newfd, .events = POLLIN, .revents = 0};
-
-  set->count++;
-}
-
-static void _pollset_del_pfd(PollSet *set, int idx) {
-
-  set->fds[idx] = set->fds[set->count - 1];
-  set->count--;
-
-  if (set->count <= set->capacity / 4 && set->capacity > UNOT_MIN_PFDS) {
-    set->capacity /= 2;
-    set->fds = realloc(set->fds, sizeof(struct pollfd) * set->capacity);
-  }
+  return false;
 }
 
 static int _get_listener() {
 
-  int sockfd;
+  int fd;
   struct sockaddr_un addr;
 
-  if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+  if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
     perror("socket");
     exit(1);
   }
@@ -56,27 +42,123 @@ static int _get_listener() {
   addr.sun_family = AF_UNIX;
   strncpy(addr.sun_path, UNOT_SOCK_PATH, sizeof(addr.sun_path) - 1);
 
-  if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+  if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
     perror("bind");
-    close(sockfd);
+    close(fd);
     exit(1);
   }
 
-  if (listen(sockfd, 5) == -1) {
+  if (listen(fd, 5) == -1) {
     perror("listen");
-    close(sockfd);
+    close(fd);
     exit(1);
   }
 
-  return sockfd;
+  return fd;
 }
 
 void server_init(ServerCtx *sctx) {
 
-  sctx->listener = _get_listener();
-  assert(sctx->listener && "server_init: failed getting listener");
-  _pollset_init(&sctx->set);
-  _pollset_add_pfd(&sctx->set, sctx->listener);
+  sctx->pfds[0] =
+      (struct pollfd){.fd = _get_listener(), .events = POLLIN, .revents = 0};
+
+  for (int i = 0; i < UNOT_MAX_CONNECTIONS; i++) {
+    sctx->pfds[i + 1].fd = -1;
+  }
+}
+
+static void _accept_new_connection(ServerCtx *sctx) {
+
+  int fd = accept(sctx->pfds[0].fd, NULL, NULL);
+  if (fd == -1) {
+    perror("accept");
+    return;
+  }
+
+  if (!_alloc_connection(sctx, fd)) {
+    fprintf(stderr, "[unotd:server]: max connections reached\n");
+    close(fd);
+  }
+}
+
+static void _close_connection(ServerCtx *sctx, int idx) {
+
+  struct pollfd *pfd = &sctx->pfds[idx];
+  close(pfd->fd);
+  pfd->fd = -1;
+}
+
+static void _handle_event_recv(ServerCtx *sctx, int idx) {
+
+  struct pollfd *pfd = &sctx->pfds[idx];
+  hf_context *ctx = &sctx->ctxs[idx - 1];
+
+  if (!hf_message_recv_async(pfd->fd, ctx)) {
+    fprintf(stderr, "[unotd:server]: %s\n", hf_get_error_string(ctx));
+    _close_connection(sctx, idx);
+    return;
+  }
+
+  if (hf_message_received(ctx)) {
+
+    hf_message msg = {0};
+
+    if (hf_message_parse(ctx, &msg)) {
+      command_handle(sctx, &msg);
+    }
+
+    else {
+      fprintf(stderr, "[unotd:server]: %s\n", hf_get_error_string(ctx));
+      hf_clear_error(ctx);
+      hf_message_set_header(&msg, UNOT_H_ERROR);
+    }
+
+    hf_message_build(ctx, &msg);
+    pfd->events = POLLOUT;
+  }
+}
+
+static void _handle_event_send(ServerCtx *sctx, int idx) {
+
+  struct pollfd *pfd = &sctx->pfds[idx];
+  hf_context *ctx = &sctx->ctxs[idx - 1];
+
+  if (!hf_message_send_async(pfd->fd, ctx)) {
+    fprintf(stderr, "[unotd:server]: %s\n", hf_get_error_string(ctx));
+    _close_connection(sctx, idx);
+    return;
+  }
+
+  if (hf_message_sent(ctx)) {
+    hf_clear_buffer(ctx);
+    pfd->events = POLLIN;
+  }
+}
+
+void server_process_connections(ServerCtx *sctx) {
+
+  for (int i = 0; i <= UNOT_MAX_CONNECTIONS; i++) {
+
+    short rev = sctx->pfds[i].revents;
+
+    if (rev & (POLLERR | POLLNVAL)) {
+      _close_connection(sctx, i);
+      continue;
+    }
+
+    if (i == 0 && (rev & POLLIN)) {
+      _accept_new_connection(sctx);
+      continue;
+    }
+
+    if (rev & POLLIN) {
+      _handle_event_recv(sctx, i);
+    }
+
+    else if (rev & POLLOUT) {
+      _handle_event_send(sctx, i);
+    }
+  }
 }
 
 void server_update_notifications(ServerCtx *sctx) {
@@ -142,40 +224,5 @@ void server_update_notifications(ServerCtx *sctx) {
 
     prev = curr;
     curr = curr->next;
-  }
-}
-
-void server_process_connections(ServerCtx *sctx) {
-
-  PollSet *set = &sctx->set;
-
-  for (int i = 0; i < set->count; i++) {
-
-    if (set->fds[i].revents & (POLLIN | POLLHUP)) {
-
-      if (set->fds[i].fd == sctx->listener) {
-        int newfd = accept(sctx->listener, NULL, NULL);
-        if (newfd == -1) {
-          // TODO
-        }
-        _pollset_add_pfd(set, newfd);
-      }
-
-      else {
-
-        char buf[256];
-        ProtocolBuffer pbuf = {.buf = buf, .state = buf, .len = sizeof(buf)};
-
-        int fd = set->fds[i].fd;
-        if (!protocol_recv(fd, &pbuf)) {
-          close(fd);
-          _pollset_del_pfd(set, i);
-          i--;
-          continue;
-        }
-
-        command_handle(sctx, fd, &pbuf);
-      }
-    }
   }
 }
