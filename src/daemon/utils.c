@@ -116,7 +116,6 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
   u_int16_t x_padding = config->x_padding;
   u_int16_t y_padding = config->y_padding;
   u_int16_t spacing = config->spacing;
-  u_int16_t bor_w = config->border_size;
   u_int16_t txt_w = extents.width;
   u_int16_t ind_w = ind_max_width;
   u_int16_t max_h = MAX(extents.height, ind_max_height);
