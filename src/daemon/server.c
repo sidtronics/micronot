@@ -101,6 +101,7 @@ void server_update_notifications(ServerCtx *sctx) {
 
     case UNOT_NEED_REDRAW:
       needs_reposition = true;
+      [[fallthrough]];
     case UNOT_NEED_REOPEN:
       utils_reposition_notification(sctx->display, &sctx->config, nprev, ncurr);
       notification_move(sctx->display, ncurr);
@@ -112,7 +113,6 @@ void server_update_notifications(ServerCtx *sctx) {
     case UNOT_NEED_UPDATE:
 
       if (needs_reposition) {
-
         utils_reposition_notification(sctx->display, &sctx->config, nprev,
                                       ncurr);
         notification_move(sctx->display, ncurr);
