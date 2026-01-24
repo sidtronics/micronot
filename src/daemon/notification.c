@@ -110,8 +110,9 @@ bool notification_update(Display *dpy, Notification *notification) {
 
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
-  long elapsed_ms = (now.tv_sec - notification->start_time.tv_sec) * 1000 +
-                    (now.tv_nsec - notification->start_time.tv_nsec) / 1000000;
+  unsigned long elapsed_ms =
+      (now.tv_sec - notification->start_time.tv_sec) * 1000 +
+      (now.tv_nsec - notification->start_time.tv_nsec) / 1000000;
 
   if (XPending(dpy)) {
     XEvent e;
