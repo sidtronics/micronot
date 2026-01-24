@@ -18,6 +18,8 @@ add_executable(unotd
     src/protocol.c
 )
 
+target_compile_options(unotd PRIVATE -Wall -Wextra)
+
 add_library(unotclient SHARED src/client/client.c src/protocol.c)
 target_include_directories(unotclient
     PUBLIC ${PROJECT_SOURCE_DIR}/include/
