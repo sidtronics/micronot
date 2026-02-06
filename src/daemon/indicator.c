@@ -1,7 +1,7 @@
 #include "indicator.h"
 #include <assert.h>
 
-bool indicator_validate_raw_str(const char *str) {
+bool indicator_validate_cust_str(const char *str) {
 
   assert(str && "indicator_validate: str");
 
@@ -37,20 +37,6 @@ bool indicator_validate_name_str(const char *str) {
   return true;
 }
 
-IndicatorString indicator_validate(const char *str) {
-
-  assert(str && "indicator_classify: str");
-
-  if (indicator_validate_raw_str(str))
-    return INDICATOR_STR_RAW;
-
-  else if (indicator_validate_name_str(str))
-    return INDICATOR_STR_NAME;
-
-  else
-    return INDICATOR_STR_INVALID;
-}
-
 const char* indicator_resolve_name(Config *config, const char *name_str) {
 
   assert(name_str && "indicator_resolve_name: name_str");
@@ -74,25 +60,19 @@ const char* indicator_resolve_name(Config *config, const char *name_str) {
 
 bool indicator_init_str(Display *dpy, Config *config, Indicator *ind, const char *str) {
 
-  switch (indicator_validate(str)) {
-
-      case INDICATOR_STR_RAW:
-          ind->str = strdup(str);
-          ind->custom_string = true;
-          break;
-
-      case INDICATOR_STR_NAME:
-          ind->str = indicator_resolve_name(config, str);
-          if (!ind->str) return false;
-          ind->custom_string = false;
-          break;
-
-      case INDICATOR_STR_INVALID:
-          return false;
-
-      default:
-          assert(0 && "unreachable");
+  if (indicator_validate_cust_str(str)) {
+    ind->str = strdup(str);
+    ind->custom_string = true;
   }
+
+  else if (indicator_validate_name_str(str)) {
+    ind->str = indicator_resolve_name(config, str);
+    if (!ind->str) return false;
+    ind->custom_string = false;
+  }
+
+  else 
+    return false;
 
   FcCharSet *charset = FcCharSetCreate();
   FcPattern *pattern, *matched_pattern;

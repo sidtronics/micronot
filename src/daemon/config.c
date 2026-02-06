@@ -193,7 +193,7 @@ void config_load(Config *cfg, const char *filename) {
 
     case CONFIG_SECTION_INDICATORS:
 
-      if (!indicator_validate_raw_str(value)) {
+      if (!indicator_validate_cust_str(value)) {
         fprintf(stderr,
                 "[unotd:config] WARN: ignored malformed indicator string '%s' "
                 "at line no: %d\n",
