@@ -79,9 +79,9 @@ bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
   FcCharSet *charset = FcCharSetCreate();
   FcPattern *pattern, *matched_pattern;
 
-  int frame_count = 0;
   const char delim = *ind->str;
   const char *p = ind->str + 1;
+  ind->frame_count = 0;
 
   while (1) {
 
@@ -94,7 +94,7 @@ bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
 
     if (*p == delim) {
       p++;
-      frame_count++;
+      ind->frame_count++;
       if (strchr(p, delim) == NULL)
         break;
     }
@@ -114,12 +114,20 @@ bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
   assert(ind->font && "indicator_init: couldn't open font");
 
   ind->frame = ind->str + 1;
-  ind->type = frame_count > 1 ? INDICATOR_TYPE_SPINNER : INDICATOR_TYPE_ICON;
 
   FcCharSetDestroy(charset);
   FcPatternDestroy(pattern);
 
   return true;
+}
+
+void indicator_free_str(Display *dpy, Indicator *ind) {
+
+  if (ind->font)
+    XftFontClose(dpy, ind->font);
+
+  if (ind->custom_string)
+    free((void *)ind->str);
 }
 
 size_t indicator_step_frame(Indicator *ind) {
@@ -135,13 +143,4 @@ size_t indicator_step_frame(Indicator *ind) {
   }
 
   return (size_t)(end - ind->frame);
-}
-
-void indicator_free_str(Display *dpy, Indicator *ind) {
-
-  if (ind->font)
-    XftFontClose(dpy, ind->font);
-
-  if (ind->custom_string)
-    free((void *)ind->str);
 }

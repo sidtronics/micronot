@@ -92,6 +92,9 @@ void notification_close(Display *dpy, Notification *notification) {
   XftDrawDestroy(notification->draw);
   XDestroyWindow(dpy, notification->window);
 
+  free(notification->txt);
+  indicator_free_str(dpy, &notification->ind);
+
   if (notification->custom_txt_font)
     XftFontClose(dpy, notification->txt_font);
 
@@ -100,9 +103,6 @@ void notification_close(Display *dpy, Notification *notification) {
 
   if (notification->ind.custom_color)
     utils_deallocate_color(dpy, notification->ind.color);
-
-  free(notification->txt);
-  indicator_free_str(dpy, &notification->ind);
 }
 
 bool notification_update(Display *dpy, Notification *notification) {
@@ -126,7 +126,7 @@ bool notification_update(Display *dpy, Notification *notification) {
     return false;
   }
 
-  if (notification->ind.type == INDICATOR_TYPE_SPINNER) {
+  if (notification->ind.frame_count > 1) {
 
     elapsed_ms = (now.tv_sec - notification->last_time.tv_sec) * 1000 +
                  (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;

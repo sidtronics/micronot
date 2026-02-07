@@ -5,11 +5,6 @@
 #include <X11/Xft/Xft.h>
 #include <stdbool.h>
 
-typedef enum _IndicatorType : u_int16_t {
-  INDICATOR_TYPE_ICON,
-  INDICATOR_TYPE_SPINNER
-} IndicatorType;
-
 typedef struct _Indicator {
 
   const char *str;
@@ -18,7 +13,7 @@ typedef struct _Indicator {
   XftFont *font;
   XftColor *color;
 
-  IndicatorType type;
+  u_int16_t frame_count;
 
   bool custom_string;
   bool custom_color;

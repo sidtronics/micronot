@@ -220,17 +220,14 @@ void server_update_notifications(ServerCtx *sctx) {
 
         needs_reposition = true;
 
-        switch (ncurr->ind.type) {
-
-        case INDICATOR_TYPE_ICON:
-          notification_close(sctx->display, ncurr);
-          nlist_remove(&sctx->open, prev);
-          break;
-
-        case INDICATOR_TYPE_SPINNER:
+        if (ncurr->ind.frame_count > 1) {
           nlist_unlink(&sctx->open, prev);
           nlist_append(&sctx->wait, curr);
-          break;
+        }
+
+        else {
+          notification_close(sctx->display, ncurr);
+          nlist_remove(&sctx->open, prev);
         }
 
         curr = prev ? prev->next : sctx->open.head;

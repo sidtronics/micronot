@@ -33,7 +33,6 @@ typedef struct _Notification {
   bool custom_txt_color;   // 1
 
   u_int16_t txt_x, txt_y; // 4
-
   u_int16_t win_x, win_y; // 4
   u_int16_t win_w, win_h; // 4
 
