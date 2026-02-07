@@ -11,19 +11,21 @@
 #define HF_IMPLEMENTATION
 #include "server.h"
 
-static bool _alloc_connection(ServerCtx *sctx, int fd) {
+void *server_handle(void *arg) {
 
-  for (int i = 0; i < UNOT_MAX_CONNECTIONS; i++) {
-    if (sctx->pfds[i + 1].fd == -1) {
-      sctx->pfds[i + 1] =
-          (struct pollfd){.fd = fd, .events = POLLIN, .revents = 0};
-      hf_clear_error(&sctx->ctxs[i]);
-      hf_clear_buffer(&sctx->ctxs[i]);
-      return true;
+  ServerCtx *sctx = (ServerCtx *)arg;
+
+  while (1) {
+
+    if (!hf_poll_sync(sctx->pfds, UNOT_MAX_CONNECTIONS)) {
+      perror("poll");
+      exit(1);
     }
+
+    server_process_connections(sctx);
   }
 
-  return false;
+  return NULL;
 }
 
 static int _get_listener() {
@@ -65,6 +67,20 @@ void server_init(ServerCtx *sctx) {
   for (int i = 0; i < UNOT_MAX_CONNECTIONS; i++) {
     sctx->pfds[i + 1].fd = -1;
   }
+}
+
+static bool _alloc_connection(ServerCtx *sctx, int fd) {
+
+  for (int i = 1; i < UNOT_MAX_CONNECTIONS; i++) {
+    if (sctx->pfds[i].fd == -1) {
+      sctx->pfds[i] = (struct pollfd){.fd = fd, .events = POLLIN, .revents = 0};
+      hf_clear_error(&sctx->ctxs[i - 1]);
+      hf_clear_buffer(&sctx->ctxs[i - 1]);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 static void _accept_new_connection(ServerCtx *sctx) {

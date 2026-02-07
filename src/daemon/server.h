@@ -29,6 +29,7 @@ typedef struct _ServerCtx {
 } ServerCtx;
 
 void server_init(ServerCtx *sctx);
+void *server_handle(void *arg);
 void server_process_connections(ServerCtx *sctx);
 void server_update_notifications(ServerCtx *sctx);
 

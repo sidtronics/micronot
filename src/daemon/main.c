@@ -4,25 +4,6 @@
 #include <poll.h>
 #include <pthread.h>
 
-void *handle_server(void *arg) {
-
-  ServerCtx *sctx = (ServerCtx *)arg;
-
-  while (1) {
-
-    int count = poll(sctx->pfds, UNOT_MAX_CONNECTIONS, -1);
-
-    if (count == -1) {
-      perror("poll");
-      exit(1);
-    }
-
-    server_process_connections(sctx);
-  }
-
-  return NULL;
-}
-
 int main() {
 
   ServerCtx sctx = {0};
@@ -61,7 +42,7 @@ int main() {
   server_init(&sctx);
 
   pthread_t poll_thread;
-  if (pthread_create(&poll_thread, NULL, handle_server, &sctx) != 0) {
+  if (pthread_create(&poll_thread, NULL, server_handle, &sctx) != 0) {
     perror("pthread_create");
     exit(1);
   }
