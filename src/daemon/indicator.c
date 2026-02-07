@@ -31,13 +31,13 @@ bool indicator_validate_name_str(const char *str) {
 
   const char *end = strstr(str + 2, (const char[]){str[0], str[0], '\0'});
 
-  if (!end || end == str + 2 || end[2] != '\0')
+  if (!end || end == str + 2)
     return false;
 
   return true;
 }
 
-const char *indicator_resolve_name(Config *config, const char *name_str) {
+const char *indicator_resolve_name(Config *config, const char *name_str, const char **hints) {
 
   assert(name_str && "indicator_resolve_name: name_str");
   assert(config && "indicator_resolve_name: config");
@@ -45,6 +45,7 @@ const char *indicator_resolve_name(Config *config, const char *name_str) {
   const char delim = *name_str;
   const char *name_beg = name_str + 2;
   const char *name_end = strstr(name_beg, (const char[]){delim, delim, '\0'});
+  *hints = name_end + 2;
   size_t name_len = (size_t)(name_end - name_beg);
 
   for (size_t i = 0; i < config->indicators_count; i++) {
@@ -61,13 +62,15 @@ const char *indicator_resolve_name(Config *config, const char *name_str) {
 bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
                         const char *str) {
 
+  const char* hints = NULL;
+
   if (indicator_validate_cust_str(str)) {
     ind->str = strdup(str);
     ind->custom_string = true;
   }
 
   else if (indicator_validate_name_str(str)) {
-    ind->str = indicator_resolve_name(config, str);
+    ind->str = indicator_resolve_name(config, str, &hints);
     if (!ind->str)
       return false;
     ind->custom_string = false;
@@ -100,7 +103,9 @@ bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
     }
   }
 
-  pattern = FcNameParse((FcChar8 *)p);
+  if (!hints || !*hints) hints = p;
+
+  pattern = FcNameParse((FcChar8 *)hints);
   FcPatternAddDouble(pattern, FC_SIZE, config->indicator_size);
   FcPatternAddCharSet(pattern, FC_CHARSET, charset);
   FcConfigSubstitute(NULL, pattern, FcMatchPattern);

@@ -27,17 +27,18 @@ $-$/$|$\$
 ### Named indicator string
 
 ```
-<delimiter><delimiter><name><delimiter><delimiter>
+<delimiter><delimiter><name><delimiter><delimiter><hints>
 ```
 
 + Use this format to refer an indicator saved in the config file.
++ Hints override the original hints of indicator string defined in the config file.
 + Name cannot be empty.
 
 ### Examples
 ```
 ||bulb||
-||ascii||
+||ascii||:style=Bold:size=10
 ..bar..
-$$globe$$
+$$globe$$FiraCode:size=7
 ```
 
