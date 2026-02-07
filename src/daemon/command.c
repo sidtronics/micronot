@@ -90,6 +90,7 @@ static void _handle_command_notify(ServerCtx *sctx, hf_message *msg) {
   if (!_inject_from_msg(&node->notification, sctx, msg)) {
     _delete_notification_node(node);
     hf_message_set_header(msg, UNOT_H_ERROR);
+    pthread_mutex_unlock(&sctx->nlist_lock);
     return;
   }
 
