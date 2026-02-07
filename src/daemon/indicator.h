@@ -30,7 +30,8 @@ typedef struct _Indicator {
 bool indicator_validate_cust_str(const char *str);
 bool indicator_validate_name_str(const char *str);
 
-bool indicator_init_str(Display *dpy, Config *config, Indicator *ind, const char *str);
+bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
+                        const char *str);
 void indicator_free_str(Display *dpy, Indicator *ind);
 
 size_t indicator_step_frame(Indicator *ind);

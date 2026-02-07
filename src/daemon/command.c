@@ -8,8 +8,9 @@ bool _inject_from_msg(Notification *target, ServerCtx *sctx, hf_message *msg) {
 
   if (hf_message_has_field_indicator(msg)) {
     indicator_free_str(sctx->display, &target->ind);
-    if (!indicator_init_str(sctx->display, &sctx->config, &target->ind, hf_message_get_field_indicator(msg)))
-        return false;
+    if (!indicator_init_str(sctx->display, &sctx->config, &target->ind,
+                            hf_message_get_field_indicator(msg)))
+      return false;
   }
 
   if (hf_message_has_field_text(msg)) {

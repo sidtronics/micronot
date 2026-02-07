@@ -37,7 +37,7 @@ bool indicator_validate_name_str(const char *str) {
   return true;
 }
 
-const char* indicator_resolve_name(Config *config, const char *name_str) {
+const char *indicator_resolve_name(Config *config, const char *name_str) {
 
   assert(name_str && "indicator_resolve_name: name_str");
   assert(config && "indicator_resolve_name: config");
@@ -58,7 +58,8 @@ const char* indicator_resolve_name(Config *config, const char *name_str) {
   return NULL;
 }
 
-bool indicator_init_str(Display *dpy, Config *config, Indicator *ind, const char *str) {
+bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
+                        const char *str) {
 
   if (indicator_validate_cust_str(str)) {
     ind->str = strdup(str);
@@ -67,11 +68,12 @@ bool indicator_init_str(Display *dpy, Config *config, Indicator *ind, const char
 
   else if (indicator_validate_name_str(str)) {
     ind->str = indicator_resolve_name(config, str);
-    if (!ind->str) return false;
+    if (!ind->str)
+      return false;
     ind->custom_string = false;
   }
 
-  else 
+  else
     return false;
 
   FcCharSet *charset = FcCharSetCreate();

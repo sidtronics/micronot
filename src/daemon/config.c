@@ -35,11 +35,15 @@ static void _parse_field_dbl(const char *key, const char *val, double *res) {
             val, key);
 }
 
+static void _parse_field_str(const char *val, const char **res) {
+  *res = strdup(val);
+}
+
 static void _parse_color(const char *key, char *str, unsigned long *res) {
 
   // color string: #RRGGBB
 
-  if (!(strlen(str) == 7 && *str == '#')) {
+  if (strlen(str) != 7 || *str != '#') {
     fprintf(stderr,
             "[unotd:config] ERROR: invalid color string '%s' for key '%s'\n",
             str, key);
@@ -174,7 +178,7 @@ void config_load(Config *cfg, const char *filename) {
       else if (strcmp(key, "indicator_size") == 0)
         _parse_field_dbl(key, value, &cfg->indicator_size);
       else if (strcmp(key, "font") == 0)
-        cfg->font = strdup(value);
+        _parse_field_str(value, &cfg->font);
       else if (strcmp(key, "timeout") == 0)
         _parse_field_ul(key, value, &cfg->timeout);
       else if (strcmp(key, "bg_color") == 0)
