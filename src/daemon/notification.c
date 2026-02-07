@@ -113,13 +113,11 @@ bool notification_update(Display *dpy, Notification *notification) {
       (now.tv_sec - notification->start_time.tv_sec) * 1000 +
       (now.tv_nsec - notification->start_time.tv_nsec) / 1000000;
 
-  if (XPending(dpy)) {
-    XEvent e;
-    if (XCheckWindowEvent(dpy, notification->window, ButtonPressMask, &e)) {
-      if (e.xbutton.button == Button1) {
-        XUnmapWindow(dpy, e.xbutton.window);
-        return false;
-      }
+  XEvent e;
+  if (XCheckWindowEvent(dpy, notification->window, ButtonPressMask, &e)) {
+    if (e.xbutton.button == Button1) {
+      XUnmapWindow(dpy, notification->window);
+      return false;
     }
   }
 
