@@ -3,7 +3,6 @@
 
 #include "config.h"
 #include "indicator.h"
-#include <X11/Xft/Xft.h>
 #include <X11/Xlib.h>
 #include <stdbool.h>
 

@@ -5,6 +5,10 @@
 #include <X11/Xft/Xft.h>
 #include <stdbool.h>
 
+#ifdef strstr
+#undef strstr
+#endif
+
 typedef struct _Indicator {
 
   const char *str;
