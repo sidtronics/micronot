@@ -91,6 +91,36 @@ UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs) {
   return 0;
 }
 
+bool unot_debug(UnotConnection conn) {
+
+  hf_message msg = {0};
+  hf_context ctx = {0};
+
+  hf_message_set_header(&msg, UNOT_H_DEBUG);
+
+  if (!hf_message_build(&ctx, &msg)) {
+    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
+    return 0;
+  }
+
+  if (!hf_message_send_sync(conn, &ctx)) {
+    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
+    return 0;
+  }
+
+  if (!hf_message_recv_sync(conn, &ctx)) {
+    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
+    return 0;
+  }
+
+  if (!hf_message_parse(&ctx, &msg)) {
+    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
+    return 0;
+  }
+
+  return hf_message_get_header(&msg) == UNOT_H_OK;
+}
+
 void unot_disconnect(UnotConnection conn) {
   if (conn >= 0) {
     if (close(conn) == -1) {

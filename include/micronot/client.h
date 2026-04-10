@@ -31,6 +31,8 @@ void unot_attr_clear_timeout(UnotAttrs *attrs);
 
 void unot_attr_clear(UnotAttrs *attrs);
 
+bool unot_debug(UnotConnection conn);
+
 UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs);
 UnotID unot_modify(UnotConnection conn, UnotAttrs *attrs, UnotID id);
 UnotID unot_close(UnotConnection conn, UnotID id);

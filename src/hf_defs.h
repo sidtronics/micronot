@@ -38,6 +38,12 @@
   )                                                                            \
                                                                                \
   X(                                                                           \
+    "DBG",                                                                     \
+    UNOT_H_DEBUG,                                                              \
+    0                                                                          \
+  )                                                                            \
+                                                                               \
+  X(                                                                           \
     "OK",                                                                      \
     UNOT_H_OK,                                                                 \
     UNOT_F_NOTIFICATION_ID                                                     \

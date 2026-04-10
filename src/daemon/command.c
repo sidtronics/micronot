@@ -114,6 +114,40 @@ static void _handle_command_notify(ServerCtx *sctx, uint64_t client_id,
   hf_message_set_field_id(msg, node->notification.window);
 }
 
+void _handle_command_debug(ServerCtx *sctx, hf_message *msg) {
+
+  int open_count = 0;
+  int wait_count = 0;
+
+  pthread_mutex_lock(&sctx->nlist_lock);
+
+  NotificationNode *curr = sctx->open.head;
+  fprintf(stderr, "[unotd:server]: --- OPEN LIST ---\n");
+  while (curr != NULL) {
+    open_count++;
+    fprintf(stderr, "[unotd:server]: text: %s\n", curr->notification.txt);
+    curr = curr->next;
+  }
+
+  curr = sctx->wait.head;
+  fprintf(stderr, "[unotd:server]: --- WAIT LIST ---\n");
+  while (curr != NULL) {
+    wait_count++;
+    fprintf(stderr, "[unotd:server]: text: %s, client: %lu\n",
+            curr->notification.txt, curr->notification.client_id);
+    curr = curr->next;
+  }
+
+  fprintf(stderr,
+          "[unotd:server]: open notifications count: %d, wait notifications "
+          "count: %d\n\n",
+          open_count, wait_count);
+
+  pthread_mutex_unlock(&sctx->nlist_lock);
+
+  hf_message_set_header(msg, UNOT_H_OK);
+}
+
 void command_handle(ServerCtx *sctx, uint64_t client_id, hf_message *msg) {
 
   switch ((hf_message_get_header(msg))) {
@@ -124,6 +158,10 @@ void command_handle(ServerCtx *sctx, uint64_t client_id, hf_message *msg) {
 
   case UNOT_H_MODIFY:
     assert(0 && "not implemented");
+    break;
+
+  case UNOT_H_DEBUG:
+    _handle_command_debug(sctx, msg);
     break;
 
   default:
