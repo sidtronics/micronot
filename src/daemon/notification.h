@@ -5,6 +5,7 @@
 #include "indicator.h"
 #include <X11/Xlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum _NotificationState : u_int16_t {
   UNOT_NEED_INIT,
@@ -14,6 +15,8 @@ typedef enum _NotificationState : u_int16_t {
 } NotificationState;
 
 typedef struct _Notification {
+
+  uint64_t client_id; // 8
 
   Window window; // 8
   XftDraw *draw; // 8
@@ -31,9 +34,9 @@ typedef struct _Notification {
   bool custom_txt_font;    // 1
   bool custom_txt_color;   // 1
 
-  u_int16_t txt_x, txt_y; // 4
-  u_int16_t win_x, win_y; // 4
-  u_int16_t win_w, win_h; // 4
+  uint16_t txt_x, txt_y; // 4
+  uint16_t win_x, win_y; // 4
+  uint16_t win_w, win_h; // 4
 
 } Notification;
 

@@ -58,13 +58,16 @@ bool _inject_from_msg(Notification *target, ServerCtx *sctx, hf_message *msg) {
   return true;
 }
 
-static NotificationNode *_create_notification_node(ServerCtx *sctx) {
+static NotificationNode *_create_notification_node(ServerCtx *sctx,
+                                                   uint64_t client_id) {
 
   NotificationNode *node = calloc(1, sizeof(NotificationNode));
   assert(node && "_create_notification_node: malloc failed");
 
-  /* apply defaults */
   Notification *not = &node->notification;
+  not->client_id = client_id;
+
+  /* apply defaults */
   not->txt_font = sctx->txt_font;
   not->txt_color = &sctx->txt_color;
   not->ind.color = &sctx->ind_color;
@@ -76,14 +79,15 @@ static NotificationNode *_create_notification_node(ServerCtx *sctx) {
 
 static void _delete_notification_node(NotificationNode *node) { free(node); }
 
-static void _handle_command_notify(ServerCtx *sctx, hf_message *msg) {
+static void _handle_command_notify(ServerCtx *sctx, uint64_t client_id,
+                                   hf_message *msg) {
 
   if (!hf_message_mask_has_all(msg, UNOT_F_TEXT | UNOT_F_INDICATOR)) {
     hf_message_set_header(msg, UNOT_H_ERROR);
     return;
   }
 
-  NotificationNode *node = _create_notification_node(sctx);
+  NotificationNode *node = _create_notification_node(sctx, client_id);
 
   pthread_mutex_lock(&sctx->nlist_lock);
 
@@ -107,12 +111,12 @@ static void _handle_command_notify(ServerCtx *sctx, hf_message *msg) {
   hf_message_set_field_id(msg, node->notification.window);
 }
 
-void command_handle(ServerCtx *sctx, hf_message *msg) {
+void command_handle(ServerCtx *sctx, uint64_t client_id, hf_message *msg) {
 
   switch ((hf_message_get_header(msg))) {
 
   case UNOT_H_NOTIFY:
-    _handle_command_notify(sctx, msg);
+    _handle_command_notify(sctx, client_id, msg);
     break;
 
   case UNOT_H_MODIFY:

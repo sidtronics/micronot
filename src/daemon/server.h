@@ -6,6 +6,11 @@
 #define UNOT_MAX_CONNECTIONS 10
 #define UNOT_SOCK_PATH "/tmp/unotd.sock"
 
+typedef struct _Client {
+    uint64_t id;
+    hf_context ctx;
+} Client;
+
 typedef struct _ServerCtx {
 
   Display *display;
@@ -13,7 +18,7 @@ typedef struct _ServerCtx {
   Config config;
 
   struct pollfd pfds[1 + UNOT_MAX_CONNECTIONS]; // First element stores listener
-  hf_context ctxs[UNOT_MAX_CONNECTIONS];
+  Client clients[UNOT_MAX_CONNECTIONS];
 
   XftFont *txt_font;
   XftColor txt_color;
@@ -25,6 +30,8 @@ typedef struct _ServerCtx {
   pthread_mutex_t nlist_lock;
   pthread_cond_t nlist_empty;
   pthread_cond_t notif_open;
+
+  uint64_t next_client_id;
 
 } ServerCtx;
 

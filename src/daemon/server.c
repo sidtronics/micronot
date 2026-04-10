@@ -74,8 +74,10 @@ static bool _alloc_connection(ServerCtx *sctx, int fd) {
   for (int i = 1; i < UNOT_MAX_CONNECTIONS; i++) {
     if (sctx->pfds[i].fd == -1) {
       sctx->pfds[i] = (struct pollfd){.fd = fd, .events = POLLIN, .revents = 0};
-      hf_clear_error(&sctx->ctxs[i - 1]);
-      hf_clear_buffer(&sctx->ctxs[i - 1]);
+      Client *ct = &sctx->clients[i - 1];
+      ct->id = sctx->next_client_id++;
+      hf_clear_error(&ct->ctx);
+      hf_clear_buffer(&ct->ctx);
       return true;
     }
   }
@@ -107,7 +109,8 @@ static void _close_connection(ServerCtx *sctx, int idx) {
 static void _handle_event_recv(ServerCtx *sctx, int idx) {
 
   struct pollfd *pfd = &sctx->pfds[idx];
-  hf_context *ctx = &sctx->ctxs[idx - 1];
+  Client *ct = &sctx->clients[idx - 1];
+  hf_context *ctx = &ct->ctx;
 
   if (!hf_message_recv_async(pfd->fd, ctx)) {
     fprintf(stderr, "[unotd:server]: %s\n", hf_get_error_string(ctx));
@@ -120,7 +123,7 @@ static void _handle_event_recv(ServerCtx *sctx, int idx) {
     hf_message msg = {0};
 
     if (hf_message_parse(ctx, &msg)) {
-      command_handle(sctx, &msg);
+      command_handle(sctx, ct->id, &msg);
     }
 
     else {
@@ -137,7 +140,8 @@ static void _handle_event_recv(ServerCtx *sctx, int idx) {
 static void _handle_event_send(ServerCtx *sctx, int idx) {
 
   struct pollfd *pfd = &sctx->pfds[idx];
-  hf_context *ctx = &sctx->ctxs[idx - 1];
+  Client *ct = &sctx->clients[idx - 1];
+  hf_context *ctx = &ct->ctx;
 
   if (!hf_message_send_async(pfd->fd, ctx)) {
     fprintf(stderr, "[unotd:server]: %s\n", hf_get_error_string(ctx));
