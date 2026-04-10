@@ -38,6 +38,8 @@ typedef struct _Notification {
   uint16_t win_x, win_y; // 4
   uint16_t win_w, win_h; // 4
 
+  bool is_persistent; // 1
+
 } Notification;
 
 typedef Window NotificationID;

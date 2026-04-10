@@ -224,7 +224,7 @@ void server_update_notifications(ServerCtx *sctx) {
 
         needs_reposition = true;
 
-        if (ncurr->ind.frame_count > 1) {
+        if (ncurr->is_persistent) {
           nlist_unlink(&sctx->open, prev);
           nlist_append(&sctx->wait, curr);
         }

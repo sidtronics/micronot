@@ -8,6 +8,7 @@
   X("tfg", UNOT_F_TEXT_FG, HF_INTEGER_T, text_fg)                              \
   X("tim", UNOT_F_TIMEOUT, HF_INTEGER_T, timeout)                              \
   X("nid", UNOT_F_NOTIFICATION_ID, HF_INTEGER_T, id)                           \
+  X("pst", UNOT_F_PERSISTENT, HF_INTEGER_T, persistent)                        \
 
 // String, Identifier, ValidFieldsMask
 #define HF_HEADERS                                                             \
@@ -19,6 +20,7 @@
     UNOT_F_TEXT_FONT |                                                         \
     UNOT_F_INDICATOR |                                                         \
     UNOT_F_INDICATOR_FG |                                                      \
+    UNOT_F_PERSISTENT |                                                        \
     UNOT_F_TIMEOUT                                                             \
   )                                                                            \
                                                                                \
@@ -31,6 +33,7 @@
     UNOT_F_TEXT_FONT |                                                         \
     UNOT_F_INDICATOR |                                                         \
     UNOT_F_INDICATOR_FG |                                                      \
+    UNOT_F_PERSISTENT |                                                        \
     UNOT_F_TIMEOUT                                                             \
   )                                                                            \
                                                                                \
