@@ -48,17 +48,12 @@ UnotConnection unot_connect(const char *sock_path) {
   return fd;
 }
 
-UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs) {
+bool _hf_message_send_recv_sync(UnotConnection conn, hf_message *s,
+                                hf_message *r) {
 
-  hf_message *msg = (hf_message *)attrs;
   hf_context ctx = {0};
 
-  if (!hf_message_mask_has_all(msg, UNOT_F_TEXT | UNOT_F_INDICATOR))
-    return 0;
-
-  hf_message_set_header(msg, UNOT_H_NOTIFY);
-
-  if (!hf_message_build(&ctx, msg)) {
+  if (!hf_message_build(&ctx, s)) {
     fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
     return 0;
   }
@@ -73,50 +68,59 @@ UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs) {
     return 0;
   }
 
-  uint16_t saved = msg->_mask;
-
-  if (!hf_message_parse(&ctx, msg)) {
+  if (!hf_message_parse(&ctx, r)) {
     fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
     return 0;
   }
 
-  if (hf_message_get_header(msg) == UNOT_H_OK) {
-    if (hf_message_has_field_id(msg)) {
-      msg->_mask = saved;
-      return hf_message_get_field_id(msg);
+  return 1;
+}
+
+UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs) {
+
+  hf_message *msg = (hf_message *)attrs;
+  hf_message res = {0};
+
+  if (!hf_message_mask_has_all(msg, UNOT_F_TEXT | UNOT_F_INDICATOR)) {
+    return 0;
+  }
+
+  hf_message_set_header(msg, UNOT_H_NOTIFY);
+
+  if (!_hf_message_send_recv_sync(conn, msg, &res))
+    return 0;
+
+  if (hf_message_get_header(&res) == UNOT_H_OK) {
+    if (hf_message_has_field_id(&res)) {
+      return hf_message_get_field_id(&res);
     }
   }
 
-  msg->_mask = saved;
   return 0;
+}
+
+bool unot_modify(UnotConnection conn, UnotAttrs *attrs, UnotID id) {
+
+  hf_message *msg = (hf_message *)attrs;
+  hf_message res = {0};
+
+  hf_message_set_header(msg, UNOT_H_MODIFY);
+  hf_message_set_field_id(msg, id);
+
+  if (!_hf_message_send_recv_sync(conn, msg, &res))
+    return 0;
+
+  return hf_message_get_header(&res) == UNOT_H_OK;
 }
 
 bool unot_debug(UnotConnection conn) {
 
   hf_message msg = {0};
-  hf_context ctx = {0};
 
   hf_message_set_header(&msg, UNOT_H_DEBUG);
 
-  if (!hf_message_build(&ctx, &msg)) {
-    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
+  if (!_hf_message_send_recv_sync(conn, &msg, &msg))
     return 0;
-  }
-
-  if (!hf_message_send_sync(conn, &ctx)) {
-    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
-    return 0;
-  }
-
-  if (!hf_message_recv_sync(conn, &ctx)) {
-    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
-    return 0;
-  }
-
-  if (!hf_message_parse(&ctx, &msg)) {
-    fprintf(stderr, "[libunotclient]: %s\n", hf_get_error_string(&ctx));
-    return 0;
-  }
 
   return hf_message_get_header(&msg) == UNOT_H_OK;
 }

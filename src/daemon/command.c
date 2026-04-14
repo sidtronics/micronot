@@ -114,6 +114,62 @@ static void _handle_command_notify(ServerCtx *sctx, uint64_t client_id,
   hf_message_set_field_id(msg, node->notification.window);
 }
 
+void _handle_command_modify(ServerCtx *sctx, uint64_t client_id,
+                            hf_message *msg) {
+
+  if (!hf_message_has_field_id(msg)) {
+    hf_message_set_header(msg, UNOT_H_ERROR);
+    return;
+  }
+
+  NotificationID id = hf_message_get_field_id(msg);
+  NotificationNode *prev, *node;
+
+  pthread_mutex_lock(&sctx->nlist_lock);
+
+  if ((node = nlist_find(&sctx->open, &prev, id)) &&
+      node->notification.client_id == client_id) {
+
+    // Found in open list
+    Notification *not = &node->notification;
+
+    if (!_inject_from_msg(not, sctx, msg)) {
+      hf_message_set_header(msg, UNOT_H_ERROR);
+      pthread_mutex_unlock(&sctx->nlist_lock);
+      return;
+    }
+
+    not->state = UNOT_NEED_REDRAW;
+  }
+
+  else if ((node = nlist_find(&sctx->wait, &prev, id)) &&
+           node->notification.client_id == client_id) {
+
+    // Found in wait list
+    Notification *not = &node->notification;
+
+    if (!_inject_from_msg(not, sctx, msg)) {
+      hf_message_set_header(msg, UNOT_H_ERROR);
+      pthread_mutex_unlock(&sctx->nlist_lock);
+      return;
+    }
+
+    not->state = UNOT_NEED_REOPEN;
+    nlist_unlink(&sctx->wait, prev);
+    nlist_append(&sctx->open, node);
+  }
+
+  else {
+    hf_message_set_header(msg, UNOT_H_ERROR);
+    pthread_mutex_unlock(&sctx->nlist_lock);
+    return;
+  }
+
+  pthread_mutex_unlock(&sctx->nlist_lock);
+
+  hf_message_set_header(msg, UNOT_H_OK);
+}
+
 void _handle_command_debug(ServerCtx *sctx, hf_message *msg) {
 
   int open_count = 0;
@@ -157,7 +213,7 @@ void command_handle(ServerCtx *sctx, uint64_t client_id, hf_message *msg) {
     break;
 
   case UNOT_H_MODIFY:
-    assert(0 && "not implemented");
+    _handle_command_modify(sctx, client_id, msg);
     break;
 
   case UNOT_H_DEBUG:

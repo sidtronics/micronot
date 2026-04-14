@@ -49,6 +49,8 @@ void notification_open(Display *dpy, Config *config,
 void notification_map(Display *dpy, Notification *notification);
 void notification_draw(Display *dpy, Notification *notification);
 void notification_move(Display *dpy, Notification *notification);
+void notification_resize(Display *dpy, Notification *notification);
+void notification_move_resize(Display *dpy, Notification *notification);
 bool notification_update(Display *dpy, Notification *notification);
 void notification_close(Display *dpy, Notification *notification);
 

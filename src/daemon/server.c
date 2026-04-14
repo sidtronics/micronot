@@ -205,8 +205,9 @@ void server_update_notifications(ServerCtx *sctx) {
       needs_reposition = true;
       [[fallthrough]];
     case UNOT_NEED_REOPEN:
+      utils_calculate_notification_layout(sctx->display, &sctx->config, ncurr);
       utils_reposition_notification(sctx->display, &sctx->config, nprev, ncurr);
-      notification_move(sctx->display, ncurr);
+      notification_move_resize(sctx->display, ncurr);
       notification_map(sctx->display, ncurr);
       notification_draw(sctx->display, ncurr);
       ncurr->state = UNOT_NEED_UPDATE;

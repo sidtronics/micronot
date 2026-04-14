@@ -37,7 +37,8 @@ bool indicator_validate_name_str(const char *str) {
   return true;
 }
 
-const char *indicator_resolve_name(Config *config, const char *name_str, const char **hints) {
+const char *indicator_resolve_name(Config *config, const char *name_str,
+                                   const char **hints) {
 
   assert(name_str && "indicator_resolve_name: name_str");
   assert(config && "indicator_resolve_name: config");
@@ -62,7 +63,7 @@ const char *indicator_resolve_name(Config *config, const char *name_str, const c
 bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
                         const char *str) {
 
-  const char* hints = NULL;
+  const char *hints = NULL;
 
   if (indicator_validate_cust_str(str)) {
     ind->str = strdup(str);
@@ -103,7 +104,8 @@ bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
     }
   }
 
-  if (!hints || !*hints) hints = p;
+  if (!hints || !*hints)
+    hints = p;
 
   pattern = FcNameParse((FcChar8 *)hints);
   FcPatternAddDouble(pattern, FC_SIZE, config->indicator_size);
@@ -119,6 +121,7 @@ bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
   assert(ind->font && "indicator_init: couldn't open font");
 
   ind->frame = ind->str + 1;
+  ind->frame_size = (size_t)(strchr(ind->frame, delim) - ind->frame);
 
   FcCharSetDestroy(charset);
   FcPatternDestroy(pattern);
@@ -135,7 +138,7 @@ void indicator_free_str(Display *dpy, Indicator *ind) {
     free((void *)ind->str);
 }
 
-size_t indicator_step_frame(Indicator *ind) {
+void indicator_step_frame(Indicator *ind) {
 
   assert(ind && "indicator_parse: ind");
 
@@ -147,5 +150,5 @@ size_t indicator_step_frame(Indicator *ind) {
     end = strchr(ind->frame, delim);
   }
 
-  return (size_t)(end - ind->frame);
+  ind->frame_size = (size_t)(end - ind->frame);
 }

@@ -12,7 +12,9 @@
 typedef struct _Indicator {
 
   const char *str;
+
   const char *frame;
+  size_t frame_size;
 
   XftFont *font;
   XftColor *color;
@@ -33,6 +35,6 @@ bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
                         const char *str);
 void indicator_free_str(Display *dpy, Indicator *ind);
 
-size_t indicator_step_frame(Indicator *ind);
+void indicator_step_frame(Indicator *ind);
 
 #endif

@@ -1,10 +1,11 @@
 #ifndef MICRONOT_CLIENT_H
 #define MICRONOT_CLIENT_H
+
 #include <stdbool.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 typedef struct {
-  u_int64_t _opaque[9];
+  uint64_t _opaque[9];
 } UnotAttrs;
 
 typedef int UnotConnection;
@@ -34,7 +35,7 @@ void unot_attr_clear(UnotAttrs *attrs);
 bool unot_debug(UnotConnection conn);
 
 UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs);
-UnotID unot_modify(UnotConnection conn, UnotAttrs *attrs, UnotID id);
-UnotID unot_close(UnotConnection conn, UnotID id);
+bool unot_modify(UnotConnection conn, UnotAttrs *attrs, UnotID id);
+bool unot_close(UnotConnection conn, UnotID id);
 
 #endif

@@ -34,19 +34,17 @@ void notification_draw(Display *dpy, Notification *notification) {
 
   XClearWindow(dpy, notification->window);
 
-  const char delim = *notification->ind.str;
-  const char *end = strchr(notification->ind.frame, delim);
-
   XftDrawStringUtf8(notification->draw, notification->ind.color,
                     notification->ind.font, notification->ind.x,
                     notification->ind.y, (FcChar8 *)notification->ind.frame,
-                    (size_t)(end - notification->ind.frame));
+                    notification->ind.frame_size);
 
   XftDrawStringUtf8(notification->draw, notification->txt_color,
                     notification->txt_font, notification->txt_x,
                     notification->txt_y, (FcChar8 *)notification->txt,
                     strlen(notification->txt));
 
+  indicator_step_frame(&notification->ind);
   clock_gettime(CLOCK_MONOTONIC, &notification->start_time);
   notification->last_time = notification->start_time;
 }
@@ -85,6 +83,19 @@ void notification_move(Display *dpy, Notification *notification) {
 
   XMoveWindow(dpy, notification->window, notification->win_x,
               notification->win_y);
+}
+
+void notification_resize(Display *dpy, Notification *notification) {
+
+  XResizeWindow(dpy, notification->window, notification->win_w,
+                notification->win_h);
+}
+
+void notification_move_resize(Display *dpy, Notification *notification) {
+
+  XMoveResizeWindow(dpy, notification->window, notification->win_x,
+                    notification->win_y, notification->win_w,
+                    notification->win_h);
 }
 
 void notification_close(Display *dpy, Notification *notification) {
@@ -133,16 +144,15 @@ bool notification_update(Display *dpy, Notification *notification) {
 
     if (elapsed_ms >= 150) {
 
-      size_t frame_size = indicator_step_frame(&notification->ind);
-
       XClearArea(dpy, notification->window, 0, 0, notification->txt_x, 0,
                  False);
 
       XftDrawStringUtf8(notification->draw, notification->ind.color,
                         notification->ind.font, notification->ind.x,
                         notification->ind.y, (FcChar8 *)notification->ind.frame,
-                        frame_size);
+                        notification->ind.frame_size);
 
+      indicator_step_frame(&notification->ind);
       notification->last_time = now;
     }
   }
