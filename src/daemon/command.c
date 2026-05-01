@@ -56,7 +56,7 @@ bool _inject_from_msg(Notification *target, ServerCtx *sctx, hf_message *msg) {
     target->timeout = hf_message_get_field_timeout(msg);
 
   if (hf_message_has_field_persistent(msg))
-    target->is_persistent = hf_message_has_field_persistent(msg);
+    target->is_persistent = hf_message_get_field_persistent(msg);
 
   return true;
 }

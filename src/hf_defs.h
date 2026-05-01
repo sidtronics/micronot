@@ -8,7 +8,7 @@
   X("tfg", UNOT_F_TEXT_FG, HF_INTEGER_T, text_fg)                              \
   X("tim", UNOT_F_TIMEOUT, HF_INTEGER_T, timeout)                              \
   X("nid", UNOT_F_NOTIFICATION_ID, HF_INTEGER_T, id)                           \
-  X("pst", UNOT_F_PERSISTENT, HF_INTEGER_T, persistent)                        \
+  X("pst", UNOT_F_PERSISTENT, HF_BOOL_T, persistent)                           \
 
 // String, Identifier, ValidFieldsMask
 #define HF_HEADERS                                                             \
