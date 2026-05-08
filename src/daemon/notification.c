@@ -32,6 +32,13 @@ static Window _create_notification_window(Display *dpy, u_int16_t win_x,
 
 void notification_draw(Display *dpy, Notification *notification) {
 
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+
+  unsigned long elapsed_ms =
+      (now.tv_sec - notification->last_time.tv_sec) * 1000 +
+      (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;
+
   XClearWindow(dpy, notification->window);
 
   XftDrawStringUtf8(notification->draw, notification->ind.color,
@@ -44,9 +51,10 @@ void notification_draw(Display *dpy, Notification *notification) {
                     notification->txt_y, (FcChar8 *)notification->txt,
                     strlen(notification->txt));
 
-  indicator_step_frame(&notification->ind);
-  clock_gettime(CLOCK_MONOTONIC, &notification->start_time);
-  notification->last_time = notification->start_time;
+  if (elapsed_ms >= 150) {
+    indicator_step_frame(&notification->ind);
+    notification->last_time = now;
+  }
 }
 
 void notification_open(Display *dpy, Config *config,
@@ -69,6 +77,8 @@ void notification_open(Display *dpy, Config *config,
   notification->draw =
       XftDrawCreate(dpy, notification->window, DefaultVisual(dpy, scr_nbr),
                     DefaultColormap(dpy, scr_nbr));
+
+  clock_gettime(CLOCK_MONOTONIC, &notification->start_time);
 
   notification_map(dpy, notification);
   notification_draw(dpy, notification);

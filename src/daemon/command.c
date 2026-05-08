@@ -139,6 +139,9 @@ void _handle_command_modify(ServerCtx *sctx, uint64_t client_id,
       return;
     }
 
+    if (hf_message_has_field_timeout(msg))
+      clock_gettime(CLOCK_MONOTONIC, &not->start_time);
+
     not->state = UNOT_NEED_REDRAW;
   }
 
@@ -154,7 +157,10 @@ void _handle_command_modify(ServerCtx *sctx, uint64_t client_id,
       return;
     }
 
+    clock_gettime(CLOCK_MONOTONIC, &not->start_time);
+
     not->state = UNOT_NEED_REOPEN;
+
     nlist_unlink(&sctx->wait, prev);
     nlist_append(&sctx->open, node);
   }
