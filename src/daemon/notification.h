@@ -34,9 +34,9 @@ typedef struct _Notification {
   bool custom_txt_font;    // 1
   bool custom_txt_color;   // 1
 
-  uint16_t txt_x, txt_y; // 4
-  uint16_t win_x, win_y; // 4
-  uint16_t win_w, win_h; // 4
+  int txt_x, txt_y; // 8
+  int win_x, win_y; // 8
+  int win_w, win_h; // 8
 
   bool is_persistent; // 1
 

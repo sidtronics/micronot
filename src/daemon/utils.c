@@ -80,51 +80,46 @@ void utils_deallocate_color(Display *dpy, XftColor *color) {
 
 void utils_calculate_notification_layout(Display *dpy, Config *config,
                                          Notification *target) {
+  XftFont *txt_font = target->txt_font;
+  int txt_ascent = txt_font->ascent;
+  int txt_descent = txt_font->descent;
+  int txt_height = txt_ascent + txt_descent;
 
-  unsigned short ind_max_height = 0;
+  XftFont *ind_font = target->ind.font;
+  int ind_ascent = ind_font->ascent;
+  int ind_descent = ind_font->descent;
+  int ind_height = ind_ascent + ind_descent;
+
+  int x_padding = config->x_padding;
+  int y_padding = config->y_padding;
+  int spacing = config->spacing;
+
+  int content_h = MAX(txt_height, ind_height);
+  target->win_h = content_h + y_padding * 2;
+
+  target->txt_y = y_padding + (content_h - txt_height) / 2 + txt_ascent;
+  target->ind.y = y_padding + (content_h - ind_height) / 2 + ind_ascent;
+
   unsigned short ind_max_width = 0;
-  short ind_max_y = 0;
-
   const char delim = *target->ind.str;
   const char *p = target->ind.str + 1;
   const char *end;
   while ((end = strchr(p, delim)) != NULL) {
-
     XGlyphInfo temp;
-    XftTextExtentsUtf8(dpy, target->ind.font, (FcChar8 *)p, (size_t)(end - p),
-                       &temp);
-
-    if (ind_max_height < temp.height)
-      ind_max_height = temp.height;
-
-    if (ind_max_width < temp.width)
+    XftTextExtentsUtf8(dpy, ind_font, (FcChar8 *)p, (size_t)(end - p), &temp);
+    if (ind_max_width < temp.xOff)
       ind_max_width = temp.width;
-
-    if (ind_max_y < temp.y)
-      ind_max_y = temp.y;
-
     p = end + 1;
   }
 
   XGlyphInfo extents;
-  XftTextExtentsUtf8(dpy, target->txt_font, (FcChar8 *)target->txt,
-                     strlen(target->txt), &extents);
+  XftTextExtentsUtf8(dpy, txt_font, (FcChar8 *)target->txt, strlen(target->txt),
+                     &extents);
 
-  u_int16_t x_padding = config->x_padding;
-  u_int16_t y_padding = config->y_padding;
-  u_int16_t spacing = config->spacing;
-  u_int16_t txt_w = extents.width;
-  u_int16_t ind_w = ind_max_width;
-  u_int16_t max_h = MAX(extents.height, ind_max_height);
-
-  target->win_w = ind_w + spacing + txt_w + x_padding * 2;
-  target->win_h = max_h + y_padding * 2;
+  target->win_w = x_padding * 2 + ind_max_width + spacing + extents.width;
 
   target->ind.x = x_padding;
-  target->ind.y = ind_max_y + (target->win_h - ind_max_height) / 2;
-
-  target->txt_x = x_padding + ind_w + spacing;
-  target->txt_y = extents.y + (target->win_h - extents.height) / 2;
+  target->txt_x = x_padding + ind_max_width + spacing;
 }
 
 void utils_reposition_notification(Display *dpy, Config *config,
