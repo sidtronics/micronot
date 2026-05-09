@@ -27,15 +27,14 @@ void unot_attr_clear_indicator(UnotAttrs *attrs);
 void unot_attr_clear_text_font(UnotAttrs *attrs);
 void unot_attr_clear_text_fg(UnotAttrs *attrs);
 void unot_attr_clear_indicator_fg(UnotAttrs *attrs);
-void unot_attr_clear_persistent(UnotAttrs *attrs);
 void unot_attr_clear_timeout(UnotAttrs *attrs);
+void unot_attr_clear_persistent(UnotAttrs *attrs);
 
 void unot_attr_clear(UnotAttrs *attrs);
 
-bool unot_debug(UnotConnection conn);
-
 UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs);
 bool unot_modify(UnotConnection conn, UnotAttrs *attrs, UnotID id);
+bool unot_debug(UnotConnection conn);
 bool unot_close(UnotConnection conn, UnotID id);
 
 #endif
