@@ -108,7 +108,7 @@ void notification_move_resize(Display *dpy, Notification *notification) {
                     notification->win_h);
 }
 
-void notification_close(Display *dpy, Notification *notification) {
+void notification_free(Display *dpy, Notification *notification) {
 
   XftDrawDestroy(notification->draw);
   XDestroyWindow(dpy, notification->window);

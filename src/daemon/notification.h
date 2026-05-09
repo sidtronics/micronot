@@ -54,6 +54,6 @@ void notification_move(Display *dpy, Notification *notification);
 void notification_resize(Display *dpy, Notification *notification);
 void notification_move_resize(Display *dpy, Notification *notification);
 bool notification_update(Display *dpy, Notification *notification);
-void notification_close(Display *dpy, Notification *notification);
+void notification_free(Display *dpy, Notification *notification);
 
 #endif
