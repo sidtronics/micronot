@@ -67,6 +67,8 @@ void server_init(ServerCtx *sctx) {
   for (int i = 0; i < UNOT_MAX_CONNECTIONS; i++) {
     sctx->pfds[i + 1].fd = -1;
   }
+
+  sctx->next_client_id = 1;
 }
 
 static bool _alloc_connection(ServerCtx *sctx, int fd) {
@@ -104,6 +106,39 @@ static void _close_connection(ServerCtx *sctx, int idx) {
   struct pollfd *pfd = &sctx->pfds[idx];
   close(pfd->fd);
   pfd->fd = -1;
+
+  ClientID cid = sctx->clients[idx - 1].id;
+
+  NotificationNode *curr = sctx->wait.head;
+  NotificationNode *prev = NULL;
+
+  pthread_mutex_lock(&sctx->nlist_lock);
+
+  while (curr) {
+
+    if (curr->notification.cid == cid) {
+      notification_free(sctx->display, &curr->notification);
+      nlist_remove(&sctx->wait, prev);
+
+      curr = prev ? prev->next : sctx->wait.head;
+      continue;
+    }
+
+    prev = curr;
+    curr = curr->next;
+  }
+
+  curr = sctx->open.head;
+
+  while (curr) {
+
+    if (curr->notification.cid == cid)
+      curr->notification.cid = 0;
+
+    curr = curr->next;
+  }
+
+  pthread_mutex_unlock(&sctx->nlist_lock);
 }
 
 static void _handle_event_recv(ServerCtx *sctx, int idx) {
@@ -225,13 +260,13 @@ void server_update_notifications(ServerCtx *sctx) {
 
         needs_reposition = true;
 
-        if (ncurr->is_persistent) {
+        if (ncurr->is_persistent && ncurr->cid != 0) {
           nlist_unlink(&sctx->open, prev);
           nlist_append(&sctx->wait, curr);
         }
 
         else {
-          notification_close(sctx->display, ncurr);
+          notification_free(sctx->display, ncurr);
           nlist_remove(&sctx->open, prev);
         }
 
