@@ -182,27 +182,47 @@ void _handle_command_debug(ServerCtx *sctx, hf_message *msg) {
 
   pthread_mutex_lock(&sctx->nlist_lock);
 
-  NotificationNode *curr = sctx->open.head;
-  fprintf(stderr, "[unotd:server]: --- OPEN LIST ---\n");
-  while (curr != NULL) {
-    open_count++;
-    fprintf(stderr, "[unotd:server]: text: %s\n", curr->notification.txt);
-    curr = curr->next;
+  const char *row_header = "  %-6s | %-30s | %-10s | %s\n";
+  const char *row_values = "  %-6s | %-30s | %-10lu | %s\n";
+  const char *sep =
+      "  -------+--------------------------------+------------+-----------\n";
+
+  fprintf(stderr, "[unotd:server]: DEBUG:\n");
+
+  if (sctx->wait.head || sctx->open.head) {
+
+    fprintf(stderr, "\n");
+    fprintf(stderr, "%s", sep);
+    fprintf(stderr, row_header, "list", "text", "client", "persistent");
+    fprintf(stderr, "%s", sep);
+
+    NotificationNode *curr = sctx->open.head;
+    while (curr != NULL) {
+      open_count++;
+      Notification *n = &curr->notification;
+      fprintf(stderr, row_values, "[OPEN]", n->txt, n->cid,
+              n->is_persistent ? "*" : " ");
+      curr = curr->next;
+    }
+
+    curr = sctx->wait.head;
+
+    if (curr)
+      fprintf(stderr, "%s", sep);
+
+    while (curr != NULL) {
+      wait_count++;
+      Notification *n = &curr->notification;
+      fprintf(stderr, row_values, "[WAIT]", n->txt, n->cid,
+              n->is_persistent ? "*" : " ");
+      curr = curr->next;
+    }
+
+    fprintf(stderr, "%s", sep);
   }
 
-  curr = sctx->wait.head;
-  fprintf(stderr, "[unotd:server]: --- WAIT LIST ---\n");
-  while (curr != NULL) {
-    wait_count++;
-    fprintf(stderr, "[unotd:server]: text: %s, client: %lu\n",
-            curr->notification.txt, curr->notification.client_id);
-    curr = curr->next;
-  }
-
-  fprintf(stderr,
-          "[unotd:server]: open notifications count: %d, wait notifications "
-          "count: %d\n\n",
-          open_count, wait_count);
+  fprintf(stderr, "\n  Open count: %d\n  Wait count: %d\n\n", open_count,
+          wait_count);
 
   pthread_mutex_unlock(&sctx->nlist_lock);
 
