@@ -7,7 +7,7 @@
 #define UNOT_SOCK_PATH "/tmp/unotd.sock"
 
 typedef struct _Client {
-    uint64_t id;
+    ClientID id;
     hf_context ctx;
 } Client;
 
@@ -31,7 +31,7 @@ typedef struct _ServerCtx {
   pthread_cond_t nlist_empty;
   pthread_cond_t notif_open;
 
-  uint64_t next_client_id;
+  ClientID next_client_id;
 
 } ServerCtx;
 

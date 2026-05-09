@@ -62,13 +62,13 @@ bool _inject_from_msg(Notification *target, ServerCtx *sctx, hf_message *msg) {
 }
 
 static NotificationNode *_create_notification_node(ServerCtx *sctx,
-                                                   uint64_t client_id) {
+                                                   ClientID cid) {
 
   NotificationNode *node = calloc(1, sizeof(NotificationNode));
   assert(node && "_create_notification_node: malloc failed");
 
   Notification *not = &node->notification;
-  not->client_id = client_id;
+  not->cid = cid;
 
   /* apply defaults */
   not->txt_font = sctx->txt_font;
@@ -82,7 +82,7 @@ static NotificationNode *_create_notification_node(ServerCtx *sctx,
 
 static void _delete_notification_node(NotificationNode *node) { free(node); }
 
-static void _handle_command_notify(ServerCtx *sctx, uint64_t client_id,
+static void _handle_command_notify(ServerCtx *sctx, ClientID cid,
                                    hf_message *msg) {
 
   if (!hf_message_mask_has_all(msg, UNOT_F_TEXT | UNOT_F_INDICATOR)) {
@@ -90,7 +90,7 @@ static void _handle_command_notify(ServerCtx *sctx, uint64_t client_id,
     return;
   }
 
-  NotificationNode *node = _create_notification_node(sctx, client_id);
+  NotificationNode *node = _create_notification_node(sctx, cid);
 
   pthread_mutex_lock(&sctx->nlist_lock);
 
@@ -114,8 +114,7 @@ static void _handle_command_notify(ServerCtx *sctx, uint64_t client_id,
   hf_message_set_field_id(msg, node->notification.window);
 }
 
-void _handle_command_modify(ServerCtx *sctx, uint64_t client_id,
-                            hf_message *msg) {
+void _handle_command_modify(ServerCtx *sctx, ClientID cid, hf_message *msg) {
 
   if (!hf_message_has_field_id(msg)) {
     hf_message_set_header(msg, UNOT_H_ERROR);
@@ -128,7 +127,7 @@ void _handle_command_modify(ServerCtx *sctx, uint64_t client_id,
   pthread_mutex_lock(&sctx->nlist_lock);
 
   if ((node = nlist_find(&sctx->open, &prev, id)) &&
-      node->notification.client_id == client_id) {
+      node->notification.cid == cid) {
 
     // Found in open list
     Notification *not = &node->notification;
@@ -146,7 +145,7 @@ void _handle_command_modify(ServerCtx *sctx, uint64_t client_id,
   }
 
   else if ((node = nlist_find(&sctx->wait, &prev, id)) &&
-           node->notification.client_id == client_id) {
+           node->notification.cid == cid) {
 
     // Found in wait list
     Notification *not = &node->notification;
@@ -210,16 +209,16 @@ void _handle_command_debug(ServerCtx *sctx, hf_message *msg) {
   hf_message_set_header(msg, UNOT_H_OK);
 }
 
-void command_handle(ServerCtx *sctx, uint64_t client_id, hf_message *msg) {
+void command_handle(ServerCtx *sctx, ClientID cid, hf_message *msg) {
 
   switch ((hf_message_get_header(msg))) {
 
   case UNOT_H_NOTIFY:
-    _handle_command_notify(sctx, client_id, msg);
+    _handle_command_notify(sctx, cid, msg);
     break;
 
   case UNOT_H_MODIFY:
-    _handle_command_modify(sctx, client_id, msg);
+    _handle_command_modify(sctx, cid, msg);
     break;
 
   case UNOT_H_DEBUG:

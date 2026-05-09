@@ -5,7 +5,8 @@
 
 typedef struct _ServerCtx ServerCtx;
 typedef struct _hf_message hf_message;
+typedef uint64_t ClientID;
 
-void command_handle(ServerCtx *sctx, uint64_t id, hf_message *msg);
+void command_handle(ServerCtx *sctx, ClientID cid, hf_message *msg);
 
 #endif

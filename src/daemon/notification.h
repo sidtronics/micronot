@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef uint64_t ClientID;
+
 typedef enum _NotificationState : u_int16_t {
   UNOT_NEED_INIT,
   UNOT_NEED_REOPEN,
@@ -16,7 +18,7 @@ typedef enum _NotificationState : u_int16_t {
 
 typedef struct _Notification {
 
-  uint64_t client_id; // 8
+  ClientID cid; // 8
 
   Window window; // 8
   XftDraw *draw; // 8
