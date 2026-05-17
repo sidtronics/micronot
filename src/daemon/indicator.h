@@ -28,6 +28,8 @@ typedef struct _Indicator {
 
 } Indicator;
 
+static inline bool indicator_exists(Indicator *ind) { return ind->str; }
+
 bool indicator_validate_cust_str(const char *str);
 bool indicator_validate_name_str(const char *str);
 

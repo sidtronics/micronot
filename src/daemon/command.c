@@ -85,7 +85,7 @@ static void _delete_notification_node(NotificationNode *node) { free(node); }
 static void _handle_command_notify(ServerCtx *sctx, ClientID cid,
                                    hf_message *msg) {
 
-  if (!hf_message_mask_has_all(msg, UNOT_F_TEXT | UNOT_F_INDICATOR)) {
+  if (!hf_message_mask_has_all(msg, UNOT_F_TEXT)) {
     hf_message_set_header(msg, UNOT_H_ERROR);
     return;
   }

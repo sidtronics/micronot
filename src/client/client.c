@@ -81,7 +81,7 @@ UnotID unot_notify(UnotConnection conn, UnotAttrs *attrs) {
   hf_message *msg = (hf_message *)attrs;
   hf_message res = {0};
 
-  if (!hf_message_mask_has_all(msg, UNOT_F_TEXT | UNOT_F_INDICATOR)) {
+  if (!hf_message_mask_has_all(msg, UNOT_F_TEXT)) {
     return 0;
   }
 

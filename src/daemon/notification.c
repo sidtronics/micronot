@@ -32,37 +32,37 @@ static Window _create_notification_window(Display *dpy, u_int16_t win_x,
 
 void notification_draw(Display *dpy, Notification *notification) {
 
-  struct timespec now;
-  clock_gettime(CLOCK_MONOTONIC, &now);
-
-  unsigned long elapsed_ms =
-      (now.tv_sec - notification->last_time.tv_sec) * 1000 +
-      (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;
-
   XClearWindow(dpy, notification->window);
-
-  XftDrawStringUtf8(notification->draw, notification->ind.color,
-                    notification->ind.font, notification->ind.x,
-                    notification->ind.y, (FcChar8 *)notification->ind.frame,
-                    notification->ind.frame_size);
 
   XftDrawStringUtf8(notification->draw, notification->txt_color,
                     notification->txt_font, notification->txt_x,
                     notification->txt_y, (FcChar8 *)notification->txt,
                     strlen(notification->txt));
 
-  if (elapsed_ms >= 150) {
-    indicator_step_frame(&notification->ind);
-    notification->last_time = now;
+  if (indicator_exists(&notification->ind)) {
+
+    XftDrawStringUtf8(notification->draw, notification->ind.color,
+                      notification->ind.font, notification->ind.x,
+                      notification->ind.y, (FcChar8 *)notification->ind.frame,
+                      notification->ind.frame_size);
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    unsigned long elapsed_ms =
+        (now.tv_sec - notification->last_time.tv_sec) * 1000 +
+        (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;
+
+    if (elapsed_ms >= 150) {
+      indicator_step_frame(&notification->ind);
+      notification->last_time = now;
+    }
   }
 }
 
 void notification_open(Display *dpy, Config *config,
                        Notification *notification) {
 
-  assert(notification->ind.str && "notification_open: indicator not set");
-  assert(notification->ind.font && "notification_open: ind_font not set");
-  assert(notification->ind.color && "notification_open: ind_color not set");
   assert(notification->txt && "notification_open: text not set");
   assert(notification->txt_font && "notification_open: txt_font not set");
   assert(notification->txt_color && "notification_open: txt_color not set");
@@ -147,7 +147,8 @@ bool notification_update(Display *dpy, Notification *notification) {
     return false;
   }
 
-  if (notification->ind.frame_count > 1) {
+  if (indicator_exists(&notification->ind) &&
+      notification->ind.frame_count > 1) {
 
     elapsed_ms = (now.tv_sec - notification->last_time.tv_sec) * 1000 +
                  (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;

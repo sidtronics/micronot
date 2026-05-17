@@ -78,8 +78,30 @@ void utils_deallocate_color(Display *dpy, XftColor *color) {
   free(color);
 }
 
-void utils_calculate_notification_layout(Display *dpy, Config *config,
-                                         Notification *target) {
+void _utils_calculate_notification_layout_woi(Display *dpy, Config *config,
+                                              Notification *target) {
+
+  int x_padding = config->x_padding;
+  int y_padding = config->y_padding;
+
+  XftFont *txt_font = target->txt_font;
+  int txt_ascent = txt_font->ascent;
+  int txt_descent = txt_font->descent;
+  int txt_height = txt_ascent + txt_descent;
+
+  target->win_h = txt_height + y_padding * 2;
+  target->txt_y = y_padding + txt_ascent;
+
+  XGlyphInfo extents;
+  XftTextExtentsUtf8(dpy, txt_font, (FcChar8 *)target->txt, strlen(target->txt),
+                     &extents);
+
+  target->win_w = x_padding * 2 + extents.width;
+  target->txt_x = x_padding;
+}
+
+void _utils_calculate_notification_layout_ind(Display *dpy, Config *config,
+                                              Notification *target) {
   XftFont *txt_font = target->txt_font;
   int txt_ascent = txt_font->ascent;
   int txt_descent = txt_font->descent;
@@ -120,6 +142,15 @@ void utils_calculate_notification_layout(Display *dpy, Config *config,
 
   target->ind.x = x_padding;
   target->txt_x = x_padding + ind_max_width + spacing;
+}
+
+void utils_calculate_notification_layout(Display *dpy, Config *config,
+                                         Notification *target) {
+
+  if (indicator_exists(&target->ind))
+    _utils_calculate_notification_layout_ind(dpy, config, target);
+  else
+    _utils_calculate_notification_layout_woi(dpy, config, target);
 }
 
 void utils_reposition_notification(Display *dpy, Config *config,
