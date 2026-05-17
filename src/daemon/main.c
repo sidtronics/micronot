@@ -9,19 +9,19 @@ int main() {
   ServerCtx sctx = {0};
 
   // Default config:
-  sctx = (ServerCtx){.config = {.origin = UNOT_ORIGIN_BOTTOM_RIGHT,
-                                .x_padding = 2,
-                                .y_padding = 2,
-                                .spacing = 2,
-                                .border_size = 2,
-                                .gap_size = 5,
-                                .indicator_size = 10.0,
-                                .timeout = 5,
-                                .font = "monospace:size=9",
-                                .bg_color = 0x000000,
-                                .text_color = 0xFFFFFF,
-                                .indicator_color = 0xFFFFFF,
-                                .border_color = 0xFFFFFF}};
+  sctx.config = (Config){.origin = UNOT_ORIGIN_BOTTOM_RIGHT,
+                         .x_padding = 2,
+                         .y_padding = 2,
+                         .spacing = 2,
+                         .border_size = 2,
+                         .gap_size = 5,
+                         .indicator_size = 10.0,
+                         .timeout = 5,
+                         .font = "monospace:size=9",
+                         .bg_color = 0x000000,
+                         .text_color = 0xFFFFFF,
+                         .indicator_color = 0xFFFFFF,
+                         .border_color = 0xFFFFFF};
 
   pthread_mutex_init(&sctx.nlist_lock, NULL);
   pthread_cond_init(&sctx.nlist_empty, NULL);
