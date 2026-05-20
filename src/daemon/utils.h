@@ -7,6 +7,7 @@
 
 #define MATCH(a, b) (strcmp((a), (b)) == 0)
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define CLAMP(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
 
 bool utils_parse_ul(const char *str, unsigned long *res, int base);
 bool utils_parse_u16(const char *str, uint16_t *res, int base);

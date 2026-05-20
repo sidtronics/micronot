@@ -1,4 +1,5 @@
 #include "indicator.h"
+#include "utils.h"
 #include <assert.h>
 
 bool indicator_validate_cust_str(const char *str) {
@@ -108,6 +109,23 @@ bool indicator_init_str(Display *dpy, Config *config, Indicator *ind,
     hints = p;
 
   pattern = FcNameParse((FcChar8 *)hints);
+  assert(pattern && "FcNameParse failed");
+
+  // Turns out FcNameParse doesn't support custom
+  // fields, so you can't really have ":fps=4" in
+  // your hints, which would have been much cleaner honestly.
+  //
+  // The current workaround is to repurpose a standard
+  // property that is rarely used directly. I came up 
+  // with this:
+  //
+  // dpi = "delay per indicator"
+
+  double dpi = 0;
+  FcPatternGetDouble(pattern, FC_DPI, 0, &dpi);
+  ind->ms_per_frame = CLAMP(dpi, 150, 60 * 1000);
+  FcPatternDel(pattern, FC_DPI);
+
   FcPatternAddDouble(pattern, FC_SIZE, config->indicator_size);
   FcPatternAddCharSet(pattern, FC_CHARSET, charset);
   FcConfigSubstitute(NULL, pattern, FcMatchPattern);

@@ -53,7 +53,7 @@ void notification_draw(Display *dpy, Notification *notification) {
         (now.tv_sec - notification->last_time.tv_sec) * 1000 +
         (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;
 
-    if (elapsed_ms >= 150) {
+    if (elapsed_ms >= notification->ind.ms_per_frame) {
       indicator_step_frame(&notification->ind);
       notification->last_time = now;
     }
@@ -153,7 +153,7 @@ bool notification_update(Display *dpy, Notification *notification) {
     elapsed_ms = (now.tv_sec - notification->last_time.tv_sec) * 1000 +
                  (now.tv_nsec - notification->last_time.tv_nsec) / 1000000;
 
-    if (elapsed_ms >= 150) {
+    if (elapsed_ms >= notification->ind.ms_per_frame) {
 
       XClearArea(dpy, notification->window, 0, 0, notification->txt_x, 0,
                  False);

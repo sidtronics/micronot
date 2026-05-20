@@ -20,6 +20,7 @@ typedef struct _Indicator {
   XftColor *color;
 
   u_int16_t frame_count;
+  u_int16_t ms_per_frame;
 
   bool custom_string;
   bool custom_color;
