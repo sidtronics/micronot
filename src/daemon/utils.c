@@ -80,49 +80,39 @@ void utils_deallocate_color(Display *dpy, XftColor *color) {
 
 void _utils_calculate_notification_layout_woi(Display *dpy, Config *config,
                                               Notification *target) {
-
   int x_padding = config->x_padding;
   int y_padding = config->y_padding;
 
   XftFont *txt_font = target->txt_font;
-  int txt_ascent = txt_font->ascent;
   int txt_descent = txt_font->descent;
-  int txt_height = txt_ascent + txt_descent;
-
-  target->win_h = txt_height + y_padding * 2;
-  target->txt_y = y_padding + txt_ascent;
+  int txt_height = txt_font->height;
 
   XGlyphInfo extents;
   XftTextExtentsUtf8(dpy, txt_font, (FcChar8 *)target->txt, strlen(target->txt),
                      &extents);
 
-  target->win_w = x_padding * 2 + extents.width;
   target->txt_x = x_padding;
+  target->txt_y = y_padding + (txt_height - txt_descent);
+
+  target->win_w = x_padding * 2 + extents.xOff;
+  target->win_h = txt_height + y_padding * 2;
 }
 
 void _utils_calculate_notification_layout_ind(Display *dpy, Config *config,
                                               Notification *target) {
-  XftFont *txt_font = target->txt_font;
-  int txt_ascent = txt_font->ascent;
-  int txt_descent = txt_font->descent;
-  int txt_height = txt_ascent + txt_descent;
-
-  XftFont *ind_font = target->ind.font;
-  int ind_ascent = ind_font->ascent;
-  int ind_descent = ind_font->descent;
-  int ind_height = ind_ascent + ind_descent;
-
   int x_padding = config->x_padding;
   int y_padding = config->y_padding;
   int spacing = config->spacing;
 
-  int content_h = MAX(txt_height, ind_height);
-  target->win_h = content_h + y_padding * 2;
-
-  target->txt_y = y_padding + (content_h - txt_height) / 2 + txt_ascent;
-  target->ind.y = y_padding + (content_h - ind_height) / 2 + ind_ascent;
+  XftFont *ind_font = target->ind.font;
+  XftFont *txt_font = target->txt_font;
+  int txt_descent = txt_font->descent;
+  int txt_height = txt_font->height;
 
   unsigned short ind_max_width = 0;
+  unsigned short ind_max_height = 0;
+  short ind_max_y = INT16_MIN;
+
   const char delim = *target->ind.str;
   const char *p = target->ind.str + 1;
   const char *end;
@@ -130,7 +120,11 @@ void _utils_calculate_notification_layout_ind(Display *dpy, Config *config,
     XGlyphInfo temp;
     XftTextExtentsUtf8(dpy, ind_font, (FcChar8 *)p, (size_t)(end - p), &temp);
     if (ind_max_width < temp.xOff)
-      ind_max_width = temp.width;
+      ind_max_width = temp.xOff;
+    if (ind_max_height < temp.height)
+      ind_max_height = temp.height;
+    if (ind_max_y < temp.y)
+      ind_max_y = temp.y;
     p = end + 1;
   }
 
@@ -138,10 +132,16 @@ void _utils_calculate_notification_layout_ind(Display *dpy, Config *config,
   XftTextExtentsUtf8(dpy, txt_font, (FcChar8 *)target->txt, strlen(target->txt),
                      &extents);
 
-  target->win_w = x_padding * 2 + ind_max_width + spacing + extents.width;
+  int content_h = MAX(txt_height, ind_max_height);
 
   target->ind.x = x_padding;
-  target->txt_x = x_padding + ind_max_width + spacing;
+  target->ind.y = y_padding + (content_h - ind_max_height) / 2 + ind_max_y;
+
+  target->txt_x = x_padding + spacing + ind_max_width;
+  target->txt_y = y_padding + (content_h - txt_height) / 2 + (txt_height - txt_descent);
+
+  target->win_w = x_padding * 2 + ind_max_width + spacing + extents.xOff;
+  target->win_h = content_h + y_padding * 2;
 }
 
 void utils_calculate_notification_layout(Display *dpy, Config *config,

@@ -24,7 +24,7 @@ typedef struct _Indicator {
   bool custom_string;
   bool custom_color;
 
-  u_int16_t x, y;
+  int x, y;
 
 } Indicator;
 
