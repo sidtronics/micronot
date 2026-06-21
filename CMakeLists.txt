@@ -1,9 +1,22 @@
-cmake_minimum_required(VERSION 4.0.0)
+cmake_minimum_required(VERSION 4.0)
 
-project(micronot VERSION 0.1)
+project(micronot VERSION 0.1 LANGUAGES C)
 
 # clangd
-set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# third-party
+add_library(ext_headers INTERFACE)
+target_include_directories(ext_headers INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/ext
+)
+
+# compiler options
+add_library(project_warnings INTERFACE)
+target_compile_options(project_warnings INTERFACE
+    -Wall
+    -Wextra
+)
 
 # unotd
 add_executable(unotd
@@ -17,25 +30,31 @@ add_executable(unotd
     src/daemon/command.c
 )
 
-set_property(TARGET unotd PROPERTY
-    INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
-)
+find_package(Freetype REQUIRED)
 
-target_compile_options(unotd PRIVATE -Wall -Wextra)
-
-include_directories (/usr/include/freetype2)
-
-target_link_libraries(unotd
+target_link_libraries(unotd PRIVATE
+    ext_headers
+    project_warnings
+    Freetype::Freetype
     X11
     Xft
     fontconfig
 )
 
+set_property(TARGET unotd PROPERTY
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
+)
+
 # unotclient
-add_library(unotclient SHARED src/client/client.c)
+add_library(unotclient SHARED
+    src/client/client.c
+)
 
-target_compile_options(unotclient PRIVATE -Wall -Wextra)
+target_link_libraries(unotclient PRIVATE
+    ext_headers
+    project_warnings
+)
 
-target_include_directories(unotclient
-    PUBLIC ${PROJECT_SOURCE_DIR}/include/
+target_include_directories(unotclient PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

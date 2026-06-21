@@ -7,7 +7,7 @@
 
 #include "../hf_defs.h"
 #define HF_IMPLEMENTATION
-#include "../hf.h"
+#include <hf.h>
 
 _Static_assert(sizeof(UnotAttrs) >= sizeof(hf_message),
                "UnotAttrs not big enough");

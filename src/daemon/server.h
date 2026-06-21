@@ -1,7 +1,7 @@
 #ifndef MICRONOT_SERVER_H
 #define MICRONOT_SERVER_H
 
-#include "../hf.h"
+#include <hf.h>
 #include "nlist.h"
 #define UNOT_MAX_CONNECTIONS 10
 #define UNOT_SOCK_PATH "/tmp/unotd.sock"
