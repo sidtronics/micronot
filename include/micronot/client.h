@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define UNOT_DEFAULT_SOCKET "/var/run/unot/unot.sock"
+
 typedef struct {
   uint64_t _opaque[9];
 } UnotAttrs;
@@ -11,7 +13,7 @@ typedef struct {
 typedef int UnotConnection;
 typedef unsigned long UnotID;
 
-UnotConnection unot_connect(const char *sock_path);
+UnotConnection unot_connect(const char *host, uint16_t port);
 void unot_disconnect(UnotConnection conn);
 
 void unot_attr_set_text(UnotAttrs *attrs, const char *value);

@@ -6,6 +6,10 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "../hf_defs.h"
 #define HF_IMPLEMENTATION
@@ -26,6 +30,46 @@ void *server_handle(void *arg) {
   }
 
   return NULL;
+}
+
+static int _get_listener_ip() {
+
+  int fd;
+  int opt = 1;
+  struct sockaddr_in addr;
+
+  if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    perror("socket");
+    exit(1);
+  }
+
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
+                 &opt, sizeof(opt)) == -1) {
+    perror("setsockopt");
+    close(fd);
+    exit(1);
+  }
+
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(8080);
+
+  /* LOCALHOST ONLY */
+  addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+  if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+    perror("bind");
+    close(fd);
+    exit(1);
+  }
+
+  if (listen(fd, 5) == -1) {
+    perror("listen");
+    close(fd);
+    exit(1);
+  }
+
+  return fd;
 }
 
 static int _get_listener() {
@@ -62,7 +106,7 @@ static int _get_listener() {
 void server_init(ServerCtx *sctx) {
 
   sctx->pfds[0] =
-      (struct pollfd){.fd = _get_listener(), .events = POLLIN, .revents = 0};
+      (struct pollfd){.fd = _get_listener_ip(), .events = POLLIN, .revents = 0};
 
   for (int i = 0; i < UNOT_MAX_CONNECTIONS; i++) {
     sctx->pfds[i + 1].fd = -1;

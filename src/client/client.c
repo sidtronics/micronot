@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <micronot/client.h>
+#include <netdb.h>
 #include <stdio.h>
-#include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
@@ -27,22 +27,67 @@ void unot_attr_clear(UnotAttrs *attrs) {
   hf_message_clear_fields((hf_message *)attrs);
 }
 
-UnotConnection unot_connect(const char *sock_path) {
+UnotConnection unot_connect(const char *host, uint16_t port) {
 
-  int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (fd < 0) {
-    perror("[unot:client] ERROR: socket");
+  if (host == NULL) {
+    host = UNOT_DEFAULT_SOCKET;
+  }
+
+  // Unix socket
+  if (host[0] == '/') {
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd < 0) {
+      perror("[unot:client] ERROR: socket");
+      return -1;
+    }
+
+    struct sockaddr_un addr = {0};
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, host, sizeof(addr.sun_path) - 1);
+
+    if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+      perror("[unot:client] ERROR: connect (unix)");
+      close(fd);
+      return -1;
+    }
+    return fd;
+  }
+
+  // TCP socket
+  char port_str[6];
+  snprintf(port_str, sizeof(port_str), "%u", port);
+
+  struct addrinfo hints = {0};
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  struct addrinfo *res = NULL;
+  int err = getaddrinfo(host, port_str, &hints, &res);
+  if (err != 0) {
+    fprintf(stderr, "[unot:client] ERROR: getaddrinfo: %s\n",
+            gai_strerror(err));
     return -1;
   }
 
-  struct sockaddr_un addr = {0};
-  addr.sun_family = AF_UNIX;
-  strncpy(addr.sun_path, sock_path, sizeof(addr.sun_path) - 1);
+  int fd = -1;
+  for (struct addrinfo *rp = res; rp != NULL; rp = rp->ai_next) {
+    fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+    if (fd < 0)
+      continue;
 
-  if (connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) == -1) {
-    perror("[unot:client] ERROR: connect");
+    if (connect(fd, rp->ai_addr, rp->ai_addrlen) == 0) // success
+      break;
+
     close(fd);
-    return -1;
+    fd = -1;
+  }
+
+  freeaddrinfo(res);
+
+  if (fd < 0) {
+    perror("[unot:client] ERROR: connect (tcp)");
+    fprintf(stderr, "[unot:client] ERROR: could not connect to %s:%u\n", host,
+            port);
   }
 
   return fd;
